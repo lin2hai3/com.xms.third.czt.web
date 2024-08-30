@@ -15,8 +15,7 @@ class Util_helper
 				'code' => $code,
 				'msg' => $msg,
 			), JSON_UNESCAPED_UNICODE);
-		}
-		else {
+		} else {
 			echo json_encode(array(
 				'code' => $code,
 				'msg' => $msg,
@@ -32,8 +31,7 @@ class Util_helper
 				'return_code' => $code,
 				'return_msg' => $msg,
 			), JSON_UNESCAPED_UNICODE);
-		}
-		else {
+		} else {
 			echo json_encode(array(
 				'return_code' => $code,
 				'return_msg' => $msg,
@@ -59,5 +57,17 @@ class Util_helper
 		$serial = decbin($serial);
 
 		return bindec('0' . $serial) . '';
+	}
+
+	public static function containsSqlInjection($input)
+	{
+		// 常见的SQL注入特征
+		$patterns = ['/union\s+select/i', '/select\s+.*\s+from\s+/i', '/insert\s+into/i', '/update\s+.*\s+set\s+/i', '/delete\s+from\s+/i', '/drop\s+table/i', '/--\s+/i', '/\bOR\b\s+/i', '/\bAND\b\s+/i', '/\b--\b/i'];
+		foreach ($patterns as $pattern) {
+			if (preg_match($pattern, $input)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

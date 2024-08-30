@@ -2,7 +2,7 @@
 
 use App\Utils\Utils;
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 
 class Order extends CI_Controller
@@ -28,15 +28,63 @@ class Order extends CI_Controller
 
 	// public $pay_url = 'https://aipay-fzg.fuioupay.com/aggregatePay/wxPreCreate';
 	// public $pay_url = 'https://aipaytest.fuioupay.com/aggregatePay/wxPreCreate';
-	public $pay_url = 'https://aipay.fuioupay.com/aggregatePay/wxPreCreate';
+
+//	public $pay_url = 'https://aipay.fuioupay.com/aggregatePay/wxPreCreate';
+	public $pay_url = 'https://aipay-cloud.fuioupay.com/aggregatePay/wxPreCreate';
+
+//	public $refund_url = 'https://aipay.fuioupay.com/aggregatePay/commonRefund';
+	public $refund_url = 'https://aipay-cloud.fuioupay.com/aggregatePay/commonRefund';
+
+	public function checkout()
+	{
+		$max_count = 78;
+
+		$config = array(
+			'api_host' => 'http://etr.666os.com/',
+			'api_app_id' => 'cticket',
+			'api_app_key' => 'qZcKiQmN',
+		);
+
+
+		$ticket_id = $this->input->get_post('ticket_id');
+		$timerange = $this->input->get_post('timerange');
+
+		$time_ranges = explode('-', $timerange);
+
+		$start_time = date('Y-m-d H:i:s', strtotime($time_ranges[0]));
+		$end_time = date('Y-m-d H:i:s', strtotime($time_ranges[1]));
+
+		$data = array();
+		$data['method'] = 'tickets.receipts.count.get';
+		$data['fields'] = '*';
+		$data['ticket_id'] = $ticket_id;
+		$data['stime'] = $start_time;
+		$data['etime'] = $end_time;
+		$data['page_size'] = '20';
+
+		$result = Client_helper::loadWithConfig($config, $data);
+
+		$result = json_decode($result, true);
+
+		$result['stime'] = $start_time;
+		$result['etime'] = $end_time;
+
+		$result['can_add_receipt'] = ($result['result']['count'] > $max_count ? 0 : 1);
+
+		if ($result['can_add_receipt'] == 0) {
+			$result['msg'] = '该场次已预约满';
+		}
+
+		die(json_encode($result, JSON_UNESCAPED_UNICODE));
+	}
 
 	public function prepay()
 	{
-		$order_amount = $no = $this->input->get_post('amount');
-		$order_number = $no = $this->input->get_post('order_number');
-		$member_id = $no = $this->input->get_post('member_id');
-		$wx_open_id = $no = $this->input->get_post('openId');
-		$sid = $no = $this->input->get_post('sid');
+		$order_amount = $this->input->get_post('amount');
+		$order_number = $this->input->get_post('order_number');
+		$member_id = $this->input->get_post('member_id');
+		$wx_open_id = $this->input->get_post('openId');
+		$sid = $this->input->get_post('sid');
 
 		if (empty($order_amount) || empty($order_number) || empty($member_id) || empty($wx_open_id) || empty($sid)) {
 			die(json_encode(array(
@@ -47,12 +95,33 @@ class Order extends CI_Controller
 
 		$notify_url = 'https://linhai.666os.com/v2/index.php/eticket/order/pay_result/' . $order_number;
 
+		$trade_no = $this->pay_config['mchnt_code'] . date('Ymd') . $order_number; // 商户订单号
+
+		$this->load->model('EtaPayLog_model', 'pay_log');
+
+		$pay_log = array(
+			'member_id' => $member_id,
+			'order_type' => 'RECEIPT',
+			'order_sn' => $order_number,
+			'trade_no' => $trade_no,
+			'times' => 0,
+			'amount' => $order_amount / 100,
+			'payment_type' => 'FUIOUPAY',
+			'out_trade_no' => '',
+			'refund_no' => '',
+			'status' => 1,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		);
+
+		$res = $this->pay_log->create($pay_log);
+
 		$params = array(
 			'version' => '1.0', // 版本号,必填
 			'mchnt_cd' => $this->pay_config['mchnt_cd'], // 富友分配的商户号 例：0002900F0313432
 			'random_str' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)), // 随机字符串
 			'order_amt' => $order_amount, // 订单总金额,以分为单位
-			'mchnt_order_no' => $this->pay_config['mchnt_code'] . date('Ymd') . $order_number, // 商户订单号
+			'mchnt_order_no' => $trade_no,
 			'txn_begin_ts' => date('YmdHis', time()), // 交易起始时间
 			'goods_des' => '白马荟订单', // 商品描述
 			'term_id' => '88888888', // 终端号,随机 8 字节数字字母组合
@@ -67,7 +136,12 @@ class Order extends CI_Controller
 		$sign = md5($params['mchnt_cd'] . '|' . $params['trade_type'] . '|' . $params['order_amt'] . '|' . $params['mchnt_order_no'] . '|' . $params['txn_begin_ts'] . '|' . $params['goods_des'] . '|' . $params['term_id'] . '|' . $params['term_ip'] . '|' . $params['notify_url'] . '|' . $params['random_str'] . '|' . $params['version'] . '|' . $this->pay_config['mchnt_key']);
 
 		$params['sign'] = $sign;
+
+		log_message('DEBUG', $this->pay_url);
+		log_message('DEBUG', json_encode($params, JSON_UNESCAPED_UNICODE));
 		$result = Request_helper::api_request($this->pay_url, json_encode($params), 'POST', false);
+		log_message('DEBUG', 'prepay request result');
+		log_message('DEBUG', $result);
 
 		$result = json_decode($result, true);
 
@@ -155,5 +229,48 @@ class Order extends CI_Controller
 			$key .= $pattern[mt_rand(0, 35)];    //生成php随机数
 		}
 		return $key;
+	}
+
+
+	public function cancel()
+	{
+		$order_number = $this->input->get_post('order_number');
+
+
+		$this->load->model('EtaPayLog_model', 'pay_log');
+		$last = $this->pay_log->get_last($order_number);
+
+		$trade_no =  $last->trade_no;
+		$refund_no =  $last->trade_no . 'R';
+		$order_amount = $last->amount * 100;
+		$refund_amount = $last->amount * 100;
+
+		$this->pay_log->update_refund_no($trade_no, $refund_no, $refund_amount);
+
+		$params = array(
+			'version' => '1.0',
+			'mchnt_cd' => $this->pay_config['mchnt_cd'], // 富友分配的商户号 例：0002900F0313432
+			'term_id' => '88888888', // 终端号,随机 8 字节数字字母组合
+			'random_str' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)), // 随机字符串
+			'mchnt_order_no' => $trade_no, // 商户订单号
+			'refund_order_no' => $refund_no,
+			'order_type' => 'WECHAT',
+			'total_amt' => $order_amount,
+			'refund_amt' => $refund_amount,
+		);
+
+		$sign = md5($params['mchnt_cd'] . '|' . $params['order_type'] . '|' . $params['mchnt_order_no'] . '|' . $params['refund_order_no'] . '|' . $params['total_amt'] . '|' . $params['refund_amt'] . '|' . $params['term_id'] . '|' . $params['random_str'] . '|' . $params['version'] . '|' . $this->pay_config['mchnt_key']);
+
+		$params['sign'] = $sign;
+		$result = Request_helper::api_request($this->refund_url, json_encode($params), 'POST', false);
+
+		$data = array(
+			'result' => json_decode($result, true),
+			'return' => '[]',
+			'code' => 0,
+			'msg' => 'success',
+		);
+
+		die(json_encode($data, true));
 	}
 }

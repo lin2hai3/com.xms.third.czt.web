@@ -525,6 +525,10 @@ $config['rewrite_short_tags'] = FALSE;
 $config['proxy_ips'] = '';
 
 
+$config['eta_host'] = 'http://etr.666os.com/';
+$config['eta_app_id'] = 'cticket';
+$config['eta_app_key'] = 'qZcKiQmN';
+
 $config['api_host'] = 'http://v5.666os.com/';
 $config['api_app_id'] = 'iroom';
 $config['api_app_key'] = 'iRoOm';
