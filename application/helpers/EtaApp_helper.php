@@ -6,7 +6,7 @@
  * Time: 23:33
  */
 
-class Eta_app_helper
+class EtaApp_helper
 {
 	private static $url; //接口地址
 	private static $app_id; //APP ID

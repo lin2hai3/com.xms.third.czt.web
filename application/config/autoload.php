@@ -89,7 +89,7 @@ $autoload['drivers'] = array('cache' => 'file');
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] = array('util', 'client', 'request', 'eta_app');
+$autoload['helper'] = array('util', 'client', 'request', 'etaapp');
 
 /*
 | -------------------------------------------------------------------

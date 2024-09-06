@@ -20,7 +20,7 @@ class Shop extends CI_Controller
 			'id' => $id,
 		);
 
-		$result = Eta_app_helper::load($data);
+		$result = EtaApp_helper::load($data);
 
 		$result = json_decode($result, true);
 
