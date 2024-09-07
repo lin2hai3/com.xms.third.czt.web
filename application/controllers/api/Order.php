@@ -35,10 +35,179 @@ class Order extends CI_Controller
 //	public $refund_url = 'https://aipay.fuioupay.com/aggregatePay/commonRefund';
 	public $refund_url = 'https://aipay-cloud.fuioupay.com/aggregatePay/commonRefund';
 
+	protected $default_inventory = 80;
+
+	private function getTicketRule($id)
+	{
+		$data = array();
+		$data['method'] = 'tickets.ticket.get';
+		$data['fields'] = '*';
+		$data['id'] = $id;
+		$data['extend'] = 1;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+
+		$extend = '';
+		if (isset($result['result']['extend'])) {
+			$extend = $result['result']['extend'];
+		}
+
+		// $items = explode('\r\n', $extend);
+		$rows = explode("\n", $extend);
+
+		$default_rule = array();
+		$week_rules = array();
+		$date_rules = array();
+		$rules = array();
+
+		foreach ($rows as $row) {
+			if ($this->startsWith($row, 'default:')) {
+				$type = 1;
+				$time_span = str_replace('default:', '', $row);
+				$date = 'default';
+			} elseif ($this->startWithWeek($row)) {
+				$type = 2;
+				$time_span = substr($row, 2);
+				$date = substr($row, 0, 1);
+			} else {
+				$type = 3;
+				$time_span = substr($row, 9);
+				$date = substr($row, 0, 8);
+				$date = date('Y-m-d', strtotime($date));
+			}
+
+			$time_span = trim($time_span);
+			if (strpos($time_span, "|") > -1) {
+				$time_span = explode("|", $time_span);
+				$time_array = explode(",", $time_span[0]);
+				$inventory = $time_span[1];
+			} else {
+				$time_array = explode(",", $time_span);
+				$inventory = $this->default_inventory;
+			}
+
+			$_time_array = array();
+			foreach ($time_array as $time_item) {
+				$_time_array[] = array(
+					'time_span' => $time_item,
+					'inventory' => $inventory,
+					'show_inventory' => true,
+				);
+			}
+
+			if ($type == 1) {
+				$default_rule = $_time_array;
+			}
+
+			if ($type == 2) {
+				$week_rules[$date] = $_time_array;
+			}
+
+			if ($type == 3) {
+				$date_rules[$date] = $_time_array;
+			}
+		}
+
+		for ($idx = 0; $idx < 7; $idx++) {
+			$date = date('Y-m-d', strtotime('+ ' . $idx . ' days'));
+			$week = date('w', strtotime($date));
+
+			// $time_spans = $default_rule;
+			$time_spans = '';
+
+			if (isset($week_rules[$week])) {
+				$time_spans = $week_rules[$week];
+			}
+
+			if (isset($date_rules[$date])) {
+				$time_spans = $date_rules[$date];
+			}
+
+			if (!empty($time_spans)) {
+				$rules[$date] = $time_spans;
+			}
+		}
+
+		$_rules = array();
+		foreach ($rules as $date => $rule) {
+
+
+			$_rule['date'] = $date;
+			$_rule['weekdate'] = $this->getWeekdate($date);
+
+			$_items = array();
+
+			foreach ($rule as &$item) {
+
+				$time_items = explode('-', $item['time_span']);
+				$start_time = $date . ' ' . $time_items[0];
+				$end_time = $date . ' ' . $time_items[1];
+
+				$data = array();
+				$data['method'] = 'tickets.receipts.count.get';
+				$data['fields'] = '*';
+				$data['ticket_id'] = $id;
+				$data['stime'] = $start_time;
+				$data['etime'] = $end_time;
+				$data['page_size'] = '20';
+
+				$count_result = EtaApp_helper::load($data);
+
+				$count_result = json_decode($count_result, true);
+
+				$inventory = $item['inventory'] - $count_result['result']['count'];
+
+				$item['inventory'] = $inventory;
+
+				$_items[$item['time_span']] = $item;
+			}
+
+			unset($item);
+
+			$_rule['items'] = $_items;
+			$_rules[$date] = $_rule;
+		}
+
+		return $_rules;
+	}
+
+
+	function startWithWeek($string)
+	{
+		return $this->startsWith($string, '0:')
+			|| $this->startsWith($string, '1:')
+			|| $this->startsWith($string, '2:')
+			|| $this->startsWith($string, '3:')
+			|| $this->startsWith($string, '4:')
+			|| $this->startsWith($string, '5:')
+			|| $this->startsWith($string, '6:');
+	}
+
+	function getWeekdate($date)
+	{
+		$w = date('w', strtotime($date));
+
+		$data = array(
+			0 => '周日',
+			1 => '周一',
+			2 => '周二',
+			3 => '周三',
+			4 => '周四',
+			5 => '周五',
+			6 => '周六',
+		);
+
+		return $data[$w];
+	}
+
+	function startsWith($string, $startString)
+	{
+		return strncmp($string, $startString, strlen($startString)) === 0;
+	}
+
 	public function checkout()
 	{
-		$max_count = 78;
-
 		$config = array(
 			'api_host' => 'http://etr.666os.com/',
 			'api_app_id' => 'cticket',
@@ -49,6 +218,13 @@ class Order extends CI_Controller
 		$date = $this->input->get_post('date');
 		$ticket_id = $this->input->get_post('ticket_id');
 		$timerange = $this->input->get_post('timerange');
+		$qty = $this->input->get_post('qty');
+
+
+
+		if (empty($qty)) {
+			$qty = 1;
+		}
 
 		$time_ranges = explode('-', $timerange);
 
@@ -77,10 +253,23 @@ class Order extends CI_Controller
 		$result['stime'] = $start_time;
 		$result['etime'] = $end_time;
 
-		$result['can_add_receipt'] = ($result['result']['count'] > $max_count ? 0 : 1);
+		$rules = $this->getTicketRule($ticket_id);
+
+		$can_add_receipt = false;
+		if (isset($rules[$date])) {
+			if ($rules[$date]['items'][$timerange]) {
+				if ($rules[$date]['items'][$timerange]['inventory'] > $qty) {
+					$can_add_receipt = true;
+				}
+			}
+		}
+
+		$result['can_add_receipt'] = $can_add_receipt ? 1 : 0;
+
+		// $result['can_add_receipt'] = ($result['result']['count'] > $max_count ? 0 : 1);
 
 		if ($result['can_add_receipt'] == 0) {
-			$result['msg'] = '该场次已预约满';
+			$result['msg'] = '该场次库存不足';
 		}
 
 		die(json_encode($result, JSON_UNESCAPED_UNICODE));
