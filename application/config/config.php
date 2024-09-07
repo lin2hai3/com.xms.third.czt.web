@@ -524,10 +524,15 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
-
+// 白马荟
 $config['eta_host'] = 'http://etr.666os.com/';
 $config['eta_app_id'] = 'cticket';
 $config['eta_app_key'] = 'qZcKiQmN';
+
+// 无二茶室
+$config['iroom_host'] = 'http://v5.666os.com/';
+$config['iroom_app_id'] = 'iroom';
+$config['iroom_app_key'] = 'iRoOm';
 
 $config['api_host'] = 'http://v5.666os.com/';
 $config['api_app_id'] = 'iroom';

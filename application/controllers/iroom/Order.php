@@ -11,7 +11,6 @@ require_once 'application/libraries/BankPay.php';
 require_once 'application/libraries/WxPay.php';
 
 
-
 class Order extends CI_Controller
 {
 	public $status_list = array(
@@ -31,7 +30,7 @@ class Order extends CI_Controller
 		$page = $this->input->get_post('page');
 		$page = intval($page);
 		$page = empty($page) ? 1 : $page;
-		
+
 		if (!empty($status)) {
 			$data['status'] = $status;
 		}
@@ -47,7 +46,7 @@ class Order extends CI_Controller
 		$data['orderby'] = 'id desc';
 		$data['page'] = $page;
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		$result = $result['result'];
@@ -65,7 +64,7 @@ class Order extends CI_Controller
 					'id' => $row['id']
 				);
 
-				$order_result = Client_helper::load($order_data);
+				$order_result = IRoomApp_helper::load($order_data);
 				$order_result = json_decode($order_result, true);
 				$row['status_label'] = $this->status_list[$row['status']];
 
@@ -83,7 +82,7 @@ class Order extends CI_Controller
 								'id' => $booking['shop_id'],
 							);
 
-							$shop_result = Client_helper::load($shop_data);
+							$shop_result = IRoomApp_helper::load($shop_data);
 							$shop_result = json_decode($shop_result, true);
 							$_shops[$booking['shop_id']] = $shop_result['result'];
 						}
@@ -98,7 +97,7 @@ class Order extends CI_Controller
 								'id' => $booking['room_id'],
 							);
 
-							$room_result = Client_helper::load($room_data);
+							$room_result = IRoomApp_helper::load($room_data);
 							$room_result = json_decode($room_result, true);
 							$_rooms[$booking['room_id']] = $room_result['result'];
 						}
@@ -115,8 +114,7 @@ class Order extends CI_Controller
 					if ($next_date == $end_date) {
 						$row['booking_end'] = '次日' . $row['booking_end'];
 					}
-				}
-				else {
+				} else {
 
 					$row['booking'] = array();
 					if (isset($row['shop_id'])) {
@@ -127,7 +125,7 @@ class Order extends CI_Controller
 							'id' => $row['shop_id'],
 						);
 
-						$shop_result = Client_helper::load($shop_data);
+						$shop_result = IRoomApp_helper::load($shop_data);
 						$shop_result = json_decode($shop_result, true);
 						$_shops[$row['shop_id']] = $shop_result['result'];
 
@@ -143,7 +141,7 @@ class Order extends CI_Controller
 							'id' => $row['room_id'],
 						);
 
-						$room_result = Client_helper::load($room_data);
+						$room_result = IRoomApp_helper::load($room_data);
 						$room_result = json_decode($room_result, true);
 						$_rooms[$row['room_id']] = $room_result['result'];
 
@@ -175,7 +173,7 @@ class Order extends CI_Controller
 		$data['fields'] = 'id,order_number,order_type,dateline,member_id,total_qty,total_amount,freight,fee,off,discount,final_amount,coupon_id,cuser,ctime,mtime,status,event_status,comment,removed';
 		$data['orderby'] = 'id desc';
 
-		$order_result = Client_helper::load($data);
+		$order_result = IRoomApp_helper::load($data);
 
 		$order_result = json_decode($order_result, true);
 
@@ -204,7 +202,7 @@ class Order extends CI_Controller
 					'id' => $order['booking'][0]['room_id'],
 				);
 
-				$room_result = Client_helper::load($room_data);
+				$room_result = IRoomApp_helper::load($room_data);
 				$room_result = json_decode($room_result, true);
 				$order['booking'][0]['room'] = $room_result['result'];
 
@@ -219,16 +217,13 @@ class Order extends CI_Controller
 				$order['booking'][0]['time_span'] = $start_date . ' ' . $start_time . '-' . $end_date . $end_time;
 
 
-
-
-
 				$shop_data = array(
 					'method' => 'shops.shop.get',
 					'fields' => '*',
 					'id' => $order['booking'][0]['shop_id'],
 				);
 
-				$shop_result = Client_helper::load($shop_data);
+				$shop_result = IRoomApp_helper::load($shop_data);
 				$shop_result = json_decode($shop_result, true);
 				$order['booking'][0]['shop'] = $shop_result['result'];
 
@@ -275,14 +270,13 @@ class Order extends CI_Controller
 		log_message('DEBUG', 'order.create#' . json_encode($data));
 
 		$data['method'] = 'rooms.schedule.get';
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		if (isset($result['result'])) {
 			$return_data = $result['result'];
 			$return_data['range'] = isset($return_data['range']) ? $return_data['range'] : array();
-		}
-		else {
+		} else {
 			$return_data = array();
 			$return_data['range'] = array();
 		}
@@ -321,15 +315,15 @@ class Order extends CI_Controller
 		}
 
 		/**
-		$next_date = date('Y-m-d', strtotime($data['dateline']) + 24 * 3600);
-		$data['dateline'] = $next_date;
-		$next_result = Client_helper::load($data);
-		$next_result = json_decode($next_result, true);
-		$return_data['next_range'] = $next_result['result']['range'];
-
-		// $return_data['range'] = array_merge($return_data['range'], $return_data['next_range']);
-		$return_data['next_date'] = $next_date;
-		**/
+		 * $next_date = date('Y-m-d', strtotime($data['dateline']) + 24 * 3600);
+		 * $data['dateline'] = $next_date;
+		 * $next_result = IRoomApp_helper::load($data);
+		 * $next_result = json_decode($next_result, true);
+		 * $return_data['next_range'] = $next_result['result']['range'];
+		 *
+		 * // $return_data['range'] = array_merge($return_data['range'], $return_data['next_range']);
+		 * $return_data['next_date'] = $next_date;
+		 **/
 		$return_data['next_date'] = array();
 
 
@@ -338,7 +332,7 @@ class Order extends CI_Controller
 		$room_data['fields'] = '*';
 		//$room_data['fields'] = 'id,merchant_id,shop_id,name,description,area,seats,base_rates,increase_rates,has_wifi,has_automat,has_charger,enabled';
 
-		$room_result = Client_helper::load($room_data);
+		$room_result = IRoomApp_helper::load($room_data);
 		$room_result = json_decode($room_result, true);
 		$return_data['room'] = $room_result['result'];
 		$return_data['contact'] = '';
@@ -350,7 +344,7 @@ class Order extends CI_Controller
 //		$data['fields'] = 'id,order_number,order_type,dateline,member_id,total_qty,total_amount,freight,fee,off,discount,final_amount,coupon_id,cuser,ctime,mtime,status,event_status,comment,removed';
 //		$data['orderby'] = 'id desc';
 //
-//		$result = Client_helper::load($data);
+//		$result = IRoomApp_helper::load($data);
 //		$result = json_decode($result, true);
 //		$result = $result['result'];
 //
@@ -377,7 +371,7 @@ class Order extends CI_Controller
 
 		$data['need_clean'] = 1;
 		$data['method'] = 'rooms.schedule.renew.get';
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		log_message('DEBUG', 'order.renew#' . json_encode($data));
@@ -388,7 +382,7 @@ class Order extends CI_Controller
 
 		//$next_date = date('Y-m-d', strtotime($data['dateline']) + 24 * 3600);
 		//$data['dateline'] = $next_date;
-		//$next_result = Client_helper::load($data);
+		//$next_result = IRoomApp_helper::load($data);
 		//$next_result = json_decode($next_result, true);
 		//$return_data['next_range'] = $next_result['result']['range'];
 
@@ -401,7 +395,7 @@ class Order extends CI_Controller
 		// $room_data['fields'] = 'id,merchant_id,shop_id,name,description,area,seats,base_rates,increase_rates,has_wifi,has_automat,has_charger,enabled';
 		$room_data['fields'] = '*';
 
-		$room_result = Client_helper::load($room_data);
+		$room_result = IRoomApp_helper::load($room_data);
 		$room_result = json_decode($room_result, true);
 		$return_data['room'] = $room_result['result'];
 		$return_data['contact'] = '';
@@ -434,7 +428,7 @@ class Order extends CI_Controller
 //		}
 		// 已经在前端处理了
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 
@@ -471,7 +465,7 @@ class Order extends CI_Controller
 			'booking_end' => $checkout_time,
 		);
 		//die(json_encode($order));
-		$order_result = Client_helper::load($order);
+		$order_result = IRoomApp_helper::load($order);
 		$order_result = json_decode($order_result, true);
 
 		$return_data['data'] = $data;
@@ -488,7 +482,7 @@ class Order extends CI_Controller
 			'page_size' => 100,
 		);
 
-		$coupon_result = Client_helper::load($coupon_data);
+		$coupon_result = IRoomApp_helper::load($coupon_data);
 		$coupon_result = json_decode($coupon_result, true);
 
 		if ($coupon_result['code'] == 0 && isset($coupon_result['result']['rows'])) {
@@ -548,7 +542,7 @@ class Order extends CI_Controller
 				'mobile' => $mobile,
 			);
 
-			$address_result = Client_helper::load($address_data);
+			$address_result = IRoomApp_helper::load($address_data);
 			$address_result = json_decode($address_result, true);
 
 			if ($address_result['code'] != 0) {
@@ -593,7 +587,7 @@ class Order extends CI_Controller
 		);
 
 		// log_message('debug', json_encode($order));
-		$order_result = Client_helper::load($order);
+		$order_result = IRoomApp_helper::load($order);
 		// log_message('debug', json_encode($order_result));
 		$order_result = json_decode($order_result, true);
 
@@ -633,7 +627,7 @@ class Order extends CI_Controller
 			'fields' => '*',
 			'member' => 1,
 			'weixin' => 1,
- 			'receiver' => 1,
+			'receiver' => 1,
 			'unmask' => 1,
 		);
 
@@ -646,7 +640,7 @@ class Order extends CI_Controller
 		$_rooms = array();
 
 
-		$order_result = Client_helper::load($data);
+		$order_result = IRoomApp_helper::load($data);
 		// die($order_result);
 		$order_result = json_decode($order_result, true);
 
@@ -682,7 +676,7 @@ class Order extends CI_Controller
 					'id' => $shop_id,
 				);
 
-				$shop_result = Client_helper::load($shop_data);
+				$shop_result = IRoomApp_helper::load($shop_data);
 				$shop_result = json_decode($shop_result, true);
 				$_shops[$shop_id] = $shop_result['result'];
 			}
@@ -696,7 +690,7 @@ class Order extends CI_Controller
 					'id' => $room_id,
 				);
 
-				$room_result = Client_helper::load($room_data);
+				$room_result = IRoomApp_helper::load($room_data);
 				$room_result = json_decode($room_result, true);
 				$_rooms[$room_id] = $room_result['result'];
 			}
@@ -1210,7 +1204,7 @@ class Order extends CI_Controller
 			'member_id' => $member_id,
 		);
 
-		$order_result = Client_helper::load($order);
+		$order_result = IRoomApp_helper::load($order);
 		// log_message('debug', json_encode($order_result));
 		$order_result = json_decode($order_result, true);
 		// die(json_encode($order_result));
@@ -1225,7 +1219,7 @@ class Order extends CI_Controller
 
 
 		// die(json_encode($data));
-		$order_result = Client_helper::load($data);
+		$order_result = IRoomApp_helper::load($data);
 
 		$order_result = json_decode($order_result, true);
 
@@ -1261,7 +1255,7 @@ class Order extends CI_Controller
 
 		log_message('DEBUG', 'order.append#' . json_encode($data));
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		log_message('DEBUG', 'order.append#' . json_encode($result));
@@ -1282,7 +1276,7 @@ class Order extends CI_Controller
 			'order_number' => $order_number,
 		);
 
-		$order_result = Client_helper::load($order);
+		$order_result = IRoomApp_helper::load($order);
 		// log_message('debug', json_encode($order_result));
 		$order_result = json_decode($order_result, true);
 
@@ -1307,14 +1301,13 @@ class Order extends CI_Controller
 			'member_id' => $member_id,
 		);
 
-		$order_result = Client_helper::load($order);
+		$order_result = IRoomApp_helper::load($order);
 		// log_message('debug', json_encode($order_result));
 		$order_result = json_decode($order_result, true);
 
 		if ($order_result['code'] == 0) {
 			return Util_helper::result($order_result);
-		}
-		else {
+		} else {
 			return Util_helper::result($order_result, $order_result['msg'], $order_result['code']);
 		}
 
@@ -1380,7 +1373,7 @@ class Order extends CI_Controller
 		$pay_log->pay_remark = 'room';
 		$pay_log->pay_flag = 'room';
 		$pay_log->pay_no = $pay_no;
-		$pay_log->pay_amount = $final_amount ;
+		$pay_log->pay_amount = $final_amount;
 		$pay_log->pay_ip = $this->input->ip_address();
 		$pay_log->identity = $identity;  // open-id
 
@@ -1428,8 +1421,7 @@ class Order extends CI_Controller
 			);
 
 			die(json_encode($return_data));
-		}
-		else {
+		} else {
 			$return_data = array(
 				'code' => '-1',
 				'msg' => $result['err_code_des'],
@@ -1505,7 +1497,7 @@ class Order extends CI_Controller
 		$data['amount'] = $result['amount'];
 		$data['method'] = 'orders.order.pay';
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		log_message('DEBUG', 'WX_PAY_NOTIFY::' . $pay_no . ',' . json_encode($result));

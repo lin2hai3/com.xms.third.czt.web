@@ -3,6 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Ticket extends CI_Controller
 {
+	protected $default_inventory = 80;
+
 	public function show()
 	{
 		$id = $this->input->get_post('id');
@@ -16,7 +18,10 @@ class Ticket extends CI_Controller
 		$result = EtaApp_helper::load($data);
 		$result = json_decode($result, true);
 
-		$extend = $result['result']['extend'];
+		$extend = '';
+		if (isset($result['result']['extend'])) {
+			$extend = $result['result']['extend'];
+		}
 
 		// $items = explode('\r\n', $extend);
 		$rows = explode("\n", $extend);
@@ -24,6 +29,7 @@ class Ticket extends CI_Controller
 		$default_rule = array();
 		$week_rules = array();
 		$date_rules = array();
+		$rules = array();
 
 		foreach ($rows as $row) {
 			if ($this->startsWith($row, 'default:')) {
@@ -42,13 +48,20 @@ class Ticket extends CI_Controller
 			}
 
 			$time_span = trim($time_span);
-			$time_array = explode(",", $time_span);
+			if (strpos($time_span, "|") > -1) {
+				$time_span = explode("|", $time_span);
+				$time_array = explode(",", $time_span[0]);
+				$inventory = $time_span[1];
+			} else {
+				$time_array = explode(",", $time_span);
+				$inventory = $this->default_inventory;
+			}
 
 			$_time_array = array();
 			foreach ($time_array as $time_item) {
 				$_time_array[] = array(
 					'time_span' => $time_item,
-					'inventory' => 0,
+					'inventory' => $inventory,
 					'show_inventory' => true,
 				);
 			}
@@ -94,7 +107,6 @@ class Ticket extends CI_Controller
 			$_rule['weekdate'] = $this->getWeekdate($date);
 
 			foreach ($rule as &$item) {
-				$inventory = 0;
 
 				$time_items = explode('-', $item['time_span']);
 				$start_time = $date . ' ' . $time_items[0];
@@ -112,7 +124,7 @@ class Ticket extends CI_Controller
 
 				$count_result = json_decode($count_result, true);
 
-				$inventory = 80 - $count_result['result']['count'];
+				$inventory = $item['inventory'] - $count_result['result']['count'];
 
 				$item['inventory'] = $inventory;
 			}

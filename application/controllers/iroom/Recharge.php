@@ -307,7 +307,7 @@ class Recharge extends CI_Controller
 
 		log_message('DEBUG', 'pay_prepay:' . $data['notify_url']);
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		$result = json_decode($result, true);
 
 		if (isset($result['result'])) {
@@ -390,7 +390,7 @@ class Recharge extends CI_Controller
 
 		$data['method'] = 'marketing.recharge.recharge';
 
-		$result = Client_helper::load($data);
+		$result = IRoomApp_helper::load($data);
 		log_message('DEBUG', json_encode($result, JSON_UNESCAPED_UNICODE));
 		log_message('DEBUG', 'pay_notify:' . $pay_no . '# 充值成功 success');
 
@@ -407,7 +407,7 @@ class Recharge extends CI_Controller
 //		$data['memo'] = $memo;
 //		$data['method'] = 'trades.trade.insert';
 //
-//		$result = Client_helper::load($data);
+//		$result = IRoomApp_helper::load($data);
 //
 //		die(json_encode($result));
 	}
