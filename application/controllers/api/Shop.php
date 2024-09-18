@@ -28,6 +28,8 @@ class Shop extends CI_Controller
 			$locations = explode(',', $result['result']['location']);
 			$result['result']['longitude'] = $locations[1];
 			$result['result']['latitude'] = $locations[0];
+
+			$result['result']['address'] = $result['result']['address'] . '(点击进入导航)';
 		}
 
 		$result = json_encode($result, JSON_UNESCAPED_UNICODE);

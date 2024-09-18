@@ -70,4 +70,39 @@ class Util_helper
 		}
 		return false;
 	}
+
+	public static function getPagination($page, $limit = 20)
+	{
+		return new Pagination($page, $limit);
+	}
+}
+
+class Pagination
+{
+	public $page = 0;
+	public $limit = 20;
+	public $offset = 0;
+
+	public $count = 0;
+	public $pages = 0;
+
+	public $url = '';
+
+	public function __construct($page, $limit)
+	{
+		$this->page = $page;
+		$this->limit = $limit;
+		$this->offset = ($page - 1) * $limit;
+	}
+
+	public function setCount($count)
+	{
+		$this->count = intval($count);
+		$this->pages = ceil($count / $this->limit);
+	}
+
+	public function setUrl($url, $params = [])
+	{
+		$this->url = $url;
+	}
 }

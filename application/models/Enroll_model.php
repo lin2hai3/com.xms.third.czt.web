@@ -97,9 +97,10 @@ class Enroll_model extends CI_Model
 		}
 	}
 
-	public function listRecords($sid)
+	public function listRecords($sid, $activity_no)
 	{
 		$this->db->where('sid', $sid);
+		$this->db->where('activity_no', $activity_no);
 		$this->db->where('status', 1);
 		return $this->db->get('enroll_record')->result();
 	}

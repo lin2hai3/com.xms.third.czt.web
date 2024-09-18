@@ -18,7 +18,9 @@ class Enroll extends CI_Controller
 
 	public function index()
 	{
-		echo 'index';
+		echo '<select><option>101</option></select>';
+
+		echo '<table><tr></tr></table>';
 	}
 
 	public function show()
@@ -206,13 +208,18 @@ class Enroll extends CI_Controller
 	public function list_records()
 	{
 		$sid = $this->input->get_post('sid');
+		$activity_no = $this->input->get_post('activity_no');
+
+		if (empty($activity_no)) {
+			$activity_no = '1004';
+		}
 
 		if (empty($sid)) {
 			return util_helper::result(null, '参数不能为空', '-1');
 		}
 
 		$this->load->model('Enroll_model', 'enroll');
-		$result = $this->enroll->listRecords($sid);
+		$result = $this->enroll->listRecords($sid, $activity_no);
 
 		foreach ($result as &$row) {
 			$this->load->model('Activity_model', 'act');

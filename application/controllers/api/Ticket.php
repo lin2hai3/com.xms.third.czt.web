@@ -5,15 +5,46 @@ class Ticket extends CI_Controller
 {
 	protected $default_inventory = 80;
 
+	public function index()
+	{
+		$page = $this->input->get_post('page');
+		$keyword = $this->input->get_post('keyword');
+		$pagination = Util_helper::getPagination($page);
+
+		$params = array();
+		$params['method'] = 'tickets.tickets.get';
+		$params['fields'] = '*';
+		$params['page'] = $page;
+		$params['page_size'] = $pagination->limit;
+		$params['keyword'] = $keyword;
+		$params['orderby'] = 'id DESC';
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		$pagination = Util_helper::getPagination($page);
+		$pagination->setCount($result['result']['total_results']);
+		$result['result']['pagination'] = $pagination;
+
+		return Util_helper::result($result['result']);
+	}
+
 	public function show()
 	{
 		$id = $this->input->get_post('id');
+		$show_full = $this->input->get_post('show_full');
+
+		if (empty($show_full)) {
+			$show_full = 0;
+		}
 
 		$data = array();
 		$data['method'] = 'tickets.ticket.get';
 		$data['fields'] = '*';
 		$data['id'] = $id;
+		$data['detail'] = 1;
 		$data['extend'] = 1;
+		$data['show_full'] = $show_full;
 
 		$result = EtaApp_helper::load($data);
 		$result = json_decode($result, true);
@@ -32,11 +63,11 @@ class Ticket extends CI_Controller
 		$rules = array();
 
 		foreach ($rows as $row) {
-			if ($this->startsWith($row, 'default:')) {
+			if ($this->start_with($row, 'default:')) {
 				$type = 1;
 				$time_span = str_replace('default:', '', $row);
 				$date = 'default';
-			} elseif ($this->startWithWeek($row)) {
+			} elseif ($this->start_with_week($row)) {
 				$type = 2;
 				$time_span = substr($row, 2);
 				$date = substr($row, 0, 1);
@@ -48,21 +79,27 @@ class Ticket extends CI_Controller
 			}
 
 			$time_span = trim($time_span);
-			if (strpos($time_span, "|") > -1) {
-				$time_span = explode("|", $time_span);
-				$time_array = explode(",", $time_span[0]);
-				$inventory = $time_span[1];
-			} else {
-				$time_array = explode(",", $time_span);
-				$inventory = $this->default_inventory;
-			}
+			$time_array = explode(",", $time_span);
 
 			$_time_array = array();
 			foreach ($time_array as $time_item) {
+				if (strpos($time_item, "|") > -1) {
+					$time_items = explode("|", $time_item);
+					$_time_item = $time_items[0];
+					$inventory = $time_items[1];
+				}
+				else {
+					$_time_item = $time_item;
+					$inventory = $this->default_inventory;
+				}
+
 				$_time_array[] = array(
-					'time_span' => $time_item,
+					'time_span' => $_time_item,
+					'total_inventory' => $inventory,
+					'sale_count' => 0,
 					'inventory' => $inventory,
 					'show_inventory' => true,
+					'status' => 1,
 				);
 			}
 
@@ -79,7 +116,7 @@ class Ticket extends CI_Controller
 			}
 		}
 
-		for ($idx = 0; $idx < 7; $idx++) {
+		for ($idx = 0; $idx < 10; $idx++) {
 			$date = date('Y-m-d', strtotime('+ ' . $idx . ' days'));
 			$week = date('w', strtotime($date));
 
@@ -94,17 +131,24 @@ class Ticket extends CI_Controller
 				$time_spans = $date_rules[$date];
 			}
 
-			if (!empty($time_spans)) {
+			if ($show_full == 1) {
+				if (empty($time_spans)) {
+					$time_spans = array();
+				}
 				$rules[$date] = $time_spans;
+			}
+			else {
+				if (!empty($time_spans)) {
+					$rules[$date] = $time_spans;
+				}
 			}
 		}
 
 		$_rules = array();
 		foreach ($rules as $date => $rule) {
 
-
 			$_rule['date'] = $date;
-			$_rule['weekdate'] = $this->getWeekdate($date);
+			$_rule['weekdate'] = $this->get_weekdate($date);
 
 			foreach ($rule as &$item) {
 
@@ -127,6 +171,7 @@ class Ticket extends CI_Controller
 				$inventory = $item['inventory'] - $count_result['result']['count'];
 
 				$item['inventory'] = $inventory;
+				$item['sale_count'] = $count_result['result']['count'];
 			}
 
 			unset($item);
@@ -135,24 +180,151 @@ class Ticket extends CI_Controller
 			$_rules[] = $_rule;
 		}
 
-
 		$result['result']['rules'] = $_rules;
 
 		die(json_encode($result));
 	}
 
-	function startWithWeek($string)
+	public function update_extend()
 	{
-		return $this->startsWith($string, '0:')
-			|| $this->startsWith($string, '1:')
-			|| $this->startsWith($string, '2:')
-			|| $this->startsWith($string, '3:')
-			|| $this->startsWith($string, '4:')
-			|| $this->startsWith($string, '5:')
-			|| $this->startsWith($string, '6:');
+		$id = $this->input->get_post('id');
+		$rules = $this->input->get_post('rules');
+
+		$rules = json_decode($rules, true);
+
+		$date_rules = array();
+
+		foreach ($rules as $rule) {
+
+			if (count($rule['items']) == 0) {
+				continue;
+			}
+
+			$str = '';
+			foreach ($rule['items'] as $item) {
+				if (!empty($str)) {
+					$str .= ',';
+				}
+				$str .= $item['time_span'] . '|' . $item['total_inventory'];
+			}
+
+			$_date = date('Ymd', strtotime($rule['date']));
+			$date_rules[$_date] = $str;
+		}
+
+		$params = array();
+		$params['method'] = 'tickets.ticket.get';
+		$params['fields'] = '*';
+		$params['id'] = $id;
+		$params['extend'] = 1;
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		$extend = '';
+		if (isset($result['result']['extend'])) {
+			$extend = $result['result']['extend'];
+		}
+
+		$rows = explode("\n", $extend);
+
+		$db_rules = array();
+
+		foreach ($rows as $row) {
+			if ($this->start_with($row, 'default:')) {
+				$type = 1;
+				$time_span = str_replace('default:', '', $row);
+				$date = 'default';
+			} elseif ($this->start_with_week($row)) {
+				$type = 2;
+				$time_span = substr($row, 2);
+				$date = substr($row, 0, 1);
+			} else {
+				$type = 3;
+				$time_span = substr($row, 9);
+				$date = substr($row, 0, 8);
+				$date = date('Y-m-d', strtotime($date));
+			}
+
+			$time_span = trim($time_span);
+
+			if ($type == 1) {
+				$db_rules['default'] = $time_span;
+			}
+
+			if ($type == 2) {
+				$db_rules[$date] = $time_span;
+			}
+
+//			if ($type == 3) {
+//				$db_rules[$date] = $time_span;
+//
+//				$_date = date('Ymd', strtotime($date));
+//
+//				if (isset($date_rules[$_date])) {
+//					$db_rules[$date] = $date_rules[$_date];
+//				}
+//			}
+		}
+
+
+		foreach ($date_rules as $date => $rule) {
+			$db_rules[$date] = $rule;
+		}
+
+		$db_rules1 = array();
+		foreach ($db_rules as $date => $db_rule) {
+			$db_rules1[] = $date . ':' . $db_rule;
+		}
+
+		$new_extend = implode("\n", $db_rules1);
+
+		$params = array();
+		$params['method'] = 'tickets.ticket.update';
+		$params['id'] = $id;
+		$params['extend'] = $new_extend;
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		die(json_encode($result));
 	}
 
-	function getWeekdate($date)
+	public function logs()
+	{
+		$page = $this->input->get_post('page');
+		$keyword = $this->input->get_post('keyword');
+		$pagination = Util_helper::getPagination($page);
+
+		$params = array();
+		$params['method'] = 'tickets.logs.get';
+		$params['fields'] = '*';
+		$params['page'] = $page;
+		$params['page_size'] = $pagination->limit;
+		$params['keyword'] = $keyword;
+		$params['orderby'] = 'id DESC';
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		$pagination = Util_helper::getPagination($page);
+		$pagination->setCount($result['result']['total_results']);
+		$result['result']['pagination'] = $pagination;
+
+		return Util_helper::result($result['result']);
+	}
+
+	function start_with_week($string)
+	{
+		return $this->start_with($string, '0:')
+			|| $this->start_with($string, '1:')
+			|| $this->start_with($string, '2:')
+			|| $this->start_with($string, '3:')
+			|| $this->start_with($string, '4:')
+			|| $this->start_with($string, '5:')
+			|| $this->start_with($string, '6:');
+	}
+
+	function get_weekdate($date)
 	{
 		$w = date('w', strtotime($date));
 
@@ -169,7 +341,7 @@ class Ticket extends CI_Controller
 		return $data[$w];
 	}
 
-	function startsWith($string, $startString)
+	function start_with($string, $startString)
 	{
 		return strncmp($string, $startString, strlen($startString)) === 0;
 	}

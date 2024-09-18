@@ -62,11 +62,11 @@ class Order extends CI_Controller
 		$rules = array();
 
 		foreach ($rows as $row) {
-			if ($this->startsWith($row, 'default:')) {
+			if ($this->start_with($row, 'default:')) {
 				$type = 1;
 				$time_span = str_replace('default:', '', $row);
 				$date = 'default';
-			} elseif ($this->startWithWeek($row)) {
+			} elseif ($this->start_with_week($row)) {
 				$type = 2;
 				$time_span = substr($row, 2);
 				$date = substr($row, 0, 1);
@@ -78,21 +78,27 @@ class Order extends CI_Controller
 			}
 
 			$time_span = trim($time_span);
-			if (strpos($time_span, "|") > -1) {
-				$time_span = explode("|", $time_span);
-				$time_array = explode(",", $time_span[0]);
-				$inventory = $time_span[1];
-			} else {
-				$time_array = explode(",", $time_span);
-				$inventory = $this->default_inventory;
-			}
+			$time_array = explode(",", $time_span);
 
 			$_time_array = array();
 			foreach ($time_array as $time_item) {
+				if (strpos($time_item, "|") > -1) {
+					$time_items = explode("|", $time_item);
+					$_time_item = $time_items[0];
+					$inventory = $time_items[1];
+				}
+				else {
+					$_time_item = $time_item;
+					$inventory = $this->default_inventory;
+				}
+
 				$_time_array[] = array(
-					'time_span' => $time_item,
+					'time_span' => $_time_item,
+					'total_inventory' => $inventory,
+					'sale_count' => 0,
 					'inventory' => $inventory,
 					'show_inventory' => true,
+					'status' => 1,
 				);
 			}
 
@@ -159,6 +165,7 @@ class Order extends CI_Controller
 				$inventory = $item['inventory'] - $count_result['result']['count'];
 
 				$item['inventory'] = $inventory;
+				$item['sale_count'] = $count_result['result']['count'];
 
 				$_items[$item['time_span']] = $item;
 			}
@@ -173,15 +180,15 @@ class Order extends CI_Controller
 	}
 
 
-	function startWithWeek($string)
+	function start_with_week($string)
 	{
-		return $this->startsWith($string, '0:')
-			|| $this->startsWith($string, '1:')
-			|| $this->startsWith($string, '2:')
-			|| $this->startsWith($string, '3:')
-			|| $this->startsWith($string, '4:')
-			|| $this->startsWith($string, '5:')
-			|| $this->startsWith($string, '6:');
+		return $this->start_with($string, '0:')
+			|| $this->start_with($string, '1:')
+			|| $this->start_with($string, '2:')
+			|| $this->start_with($string, '3:')
+			|| $this->start_with($string, '4:')
+			|| $this->start_with($string, '5:')
+			|| $this->start_with($string, '6:');
 	}
 
 	function getWeekdate($date)
@@ -201,7 +208,7 @@ class Order extends CI_Controller
 		return $data[$w];
 	}
 
-	function startsWith($string, $startString)
+	function start_with($string, $startString)
 	{
 		return strncmp($string, $startString, strlen($startString)) === 0;
 	}
@@ -257,7 +264,7 @@ class Order extends CI_Controller
 
 		$can_add_receipt = false;
 		if (isset($rules[$date])) {
-			if ($rules[$date]['items'][$timerange]) {
+			if (isset($rules[$date]['items'][$timerange])) {
 				if ($rules[$date]['items'][$timerange]['inventory'] > $qty) {
 					$can_add_receipt = true;
 				}
@@ -271,6 +278,8 @@ class Order extends CI_Controller
 		if ($result['can_add_receipt'] == 0) {
 			$result['msg'] = '该场次库存不足';
 		}
+
+		$result['other'] = $rules;
 
 		die(json_encode($result, JSON_UNESCAPED_UNICODE));
 	}

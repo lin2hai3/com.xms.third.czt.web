@@ -8,6 +8,44 @@
 
 class Receipt extends CI_Controller
 {
+	public function index()
+	{
+		$page = $this->input->get_post('page');
+		$keyword = $this->input->get_post('keyword');
+		$pagination = Util_helper::getPagination($page);
+
+		$params = array();
+		$params['method'] = 'tickets.receipts.get';
+		$params['fields'] = '*';
+		$params['page'] = $page;
+		$params['page_size'] = $pagination->limit;
+		$params['keyword'] = $keyword;
+		$params['orderby'] = 'id DESC';
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		foreach ($result['result']['rows'] as &$row) {
+			$params = array(
+				'method' => 'members.member.get',
+				'fields' => '*',
+				'id' => $row['member_id'],
+			);
+
+			$member_result = EtaApp_helper::load($params);
+			$member_result = json_decode($member_result, true);
+
+			$row['member_phone'] = $member_result['result']['mobile'];
+		}
+
+		unset($row);
+
+		$pagination->setCount($result['result']['total_results']);
+		$result['result']['pagination'] = $pagination;
+
+		return Util_helper::result($result['result']);
+	}
+
 	public function add()
 	{
 		$sid = $this->input->get_post('sid');
@@ -36,7 +74,6 @@ class Receipt extends CI_Controller
 		if ($has_inj) {
 			die(json_encode(array('code' => -1, 'msg' => 'error input')));
 		}
-
 
 
 		// fetch weixin id
@@ -74,5 +111,49 @@ class Receipt extends CI_Controller
 		$result = EtaApp_helper::load($data);
 
 		die(json_encode(json_decode($result, true), JSON_UNESCAPED_UNICODE));
+	}
+
+	public function apply()
+	{
+		$receipt_id = $this->input->get_post('receipt_id');
+		$admin_id = $this->input->get_post('admin_id');
+
+		$params = array(
+			'method' => 'tickets.receipt.apply',
+			'receipt_id' => $receipt_id,
+			'admin_id' => $admin_id,
+			'stime_offset' => 15 * 60, // 提前入场时间量（单位：秒）
+		);
+
+		$apply_result = EtaApp_helper::load($params);
+		// $str = $apply_result;
+		$apply_result = json_decode($apply_result, true);
+
+		if ($apply_result['code'] != 0) {
+			$msg = $apply_result['msg'];
+
+			return Util_helper::result(null, $msg, -1);
+		}
+
+		return Util_helper::result(null);
+	}
+
+	public function owner()
+	{
+		$member_id = $this->input->get_post('member_id');
+		$shop_id = $this->input->get_post('shop_id');
+
+		$params = array(
+			'method' => 'tickets.receipts.owner.get',
+			'member_id' => $member_id,
+			'shop_id' => $shop_id,
+			'stime_offset' => 15 * 60, // 提前入场时间量（单位：秒）
+		);
+
+		$result = EtaApp_helper::load($params);
+		// $str = $apply_result;
+		$result = json_decode($result, true);
+
+		die(json_encode($result));
 	}
 }
