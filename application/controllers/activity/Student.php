@@ -7,10 +7,15 @@ class Student extends CI_Controller
 	public function index()
 	{
 		$user_id = $this->input->get_post('user_id');
+		$activity_no = $this->input->get_post('activity_no');
+
+		if (empty($activity_no)) {
+			$activity_no = '1004';
+		}
 
 		$this->load->model('Userstudent_model', 'user_student');
 
-		$students = $this->user_student->getAll($user_id);
+		$students = $this->user_student->getAll($user_id, $activity_no);
 
 		// echo $this->db->last_query();
 
@@ -19,9 +24,15 @@ class Student extends CI_Controller
 
 	public function create()
 	{
+		$activity_no = $this->input->get_post('activity_no');
+
+		if (empty($activity_no)) {
+			$activity_no = '1004';
+		}
+
 		$this->load->model('Student_model', 'student');
 
-		$class_list = $this->student->getClass();
+		$class_list = $this->student->getClass($activity_no);
 
 		return Util_helper::result($class_list);
 	}
@@ -34,6 +45,12 @@ class Student extends CI_Controller
 		$seat = $this->input->get_post('seat');
 		$parent_name = $this->input->get_post('parent_name');
 		$parent_phone = $this->input->get_post('parent_phone');
+
+		$activity_no = $this->input->get_post('activity_no');
+
+		if (empty($activity_no)) {
+			$activity_no = '1004';
+		}
 
 		if (empty($user_id)) {
 			return Util_helper::result(null, '用户不能为空', 1);
@@ -71,6 +88,7 @@ class Student extends CI_Controller
 		}
 
 		$user_student = array(
+			'activity_no' => $activity_no,
 			'user_id' => $user_id,
 			'student_id' => $student->id,
 			'class' => $student->class,

@@ -41,9 +41,10 @@ class Userstudent_model extends CI_Model
 		return $this->db->get('user_student')->result();
 	}
 
-	public function getAll($user_id)
+	public function getAll($user_id, $activity_no)
 	{
 		$this->db->where('user_id', $user_id);
+		$this->db->where('activity_no', $activity_no);
 		$this->db->where('status', 1);
 
 		return $this->db->get('user_student')->result();

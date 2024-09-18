@@ -29,11 +29,12 @@ class Student_model extends CI_Model
 		return $this->db->get('student')->row();
 	}
 
-	public function getClass()
+	public function getClass($activity_no)
 	{
 		$this->db->select('class');
 		$this->db->distinct();
 		$this->db->order_by('class');
+		$this->db->where('activity_no', $activity_no);
 		$rows = $this->db->get('student')->result();
 
 		$rows2 = array();

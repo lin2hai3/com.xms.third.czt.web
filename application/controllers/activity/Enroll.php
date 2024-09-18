@@ -94,7 +94,7 @@ class Enroll extends CI_Controller
 
 		$this->load->model('Userstudent_model', 'user_student');
 
-		$students = $this->user_student->getAll($user_id);
+		$students = $this->user_student->getAll($user_id, $activity_no);
 		$activity_item->student_list = $students;
 
 		$activity_item->inventory_mask = 10;
