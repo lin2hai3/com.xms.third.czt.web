@@ -26,6 +26,10 @@ class Enroll extends CI_Controller
 		$this->load->model('Enroll_model', 'enroll');
 		$this->load->model('Activity_model', 'act');
 
+		if (empty($no)) {
+			$no = 1004;
+		}
+
 		$class_list = $this->act->getClassList();
 		$activity_items = $this->act->items($no, 1);
 		$_activity_items = array();
@@ -47,14 +51,16 @@ class Enroll extends CI_Controller
 			$_activity_items[$item->no] = $item;
 		}
 
-		$html .= '</select>关键词：<input placeholder="" value="' . $keyword . '"><button>搜索</button></form>';
+		$html .= '</select>关键词：<input name="keyword" placeholder="" value="' . $keyword . '"><button>搜索</button></form>';
 
 		$records = $this->enroll->getRecords(array(
+			'activity_no' => $no,
 			'class' => $class,
 			'item_no' => $activity_item_no,
 			'name' => $keyword,
 			'status' => 1
 		));
+
 		$records = json_decode(json_encode($records), true);
 		$sort = array_column($records, 'item_no');
 		$sort2 = array_column($records, 'class');
@@ -63,7 +69,7 @@ class Enroll extends CI_Controller
 		$html .= '<div>总计：' . count($records) . '条<table border="1" style="border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
 
 		foreach ($records as $record) {
-			$activity_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->brief . $_activity_items[$record['item_no']]->name;
+			$activity_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->name;
 			$html .= '<tr><td>' . $activity_name . '</td><td>' . $record['class'] . '</td><td>' . $record['name'] . '</td></tr>';
 		}
 
@@ -143,7 +149,7 @@ class Enroll extends CI_Controller
 
 		$this->load->model('Userstudent_model', 'user_student');
 
-		$students = $this->user_student->getAll($user_id);
+		$students = $this->user_student->getAll($user_id, $activity_no);
 		$activity_item->student_list = $students;
 
 		$activity_item->inventory_mask = 10;
