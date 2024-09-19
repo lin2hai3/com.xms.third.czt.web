@@ -47,7 +47,7 @@ class Enroll extends CI_Controller
 		$html .= '</select>活动：<select name="activity_item_no"><option value="">全部课程</option>';
 
 		foreach ($activity_items as $item) {
-			$html .= '<option value="' . $item->no . '" ' . ($activity_item_no == $item->no ? 'selected' : '' ) . '>' . $item->brief . $item->name . '</option>';
+			$html .= '<option value="' . $item->no . '" ' . ($activity_item_no == $item->no ? 'selected' : '' ) . '>' . $item->name . '</option>';
 			$_activity_items[$item->no] = $item;
 		}
 
