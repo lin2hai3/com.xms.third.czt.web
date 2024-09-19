@@ -8,6 +8,19 @@
 
 class Util_helper
 {
+	public static function isLogin()
+	{
+		$ci =& get_instance();
+		$user = $ci->session->userdata('admin_id');
+
+		if (empty($user)) {
+			header("Location: /index.php/web/admin/login");
+			return false;
+		}
+
+		return isset($user);
+	}
+
 	public static function result($data, $msg = 'success', $code = 0)
 	{
 		if (empty($data)) {
@@ -75,6 +88,8 @@ class Util_helper
 	{
 		return new Pagination($page, $limit);
 	}
+
+
 }
 
 class Pagination
