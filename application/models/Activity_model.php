@@ -44,6 +44,7 @@ class Activity_model extends CI_Model
 	{
 		$this->db->where('activity_no', $activity_no);
 		$this->db->where('no', $item_no);
+		$this->db->where('status', 1);
 		return $this->db->get('activity_item')->row();
 	}
 

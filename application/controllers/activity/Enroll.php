@@ -66,7 +66,7 @@ class Enroll extends CI_Controller
 		$sort2 = array_column($records, 'class');
 		array_multisort($sort, SORT_ASC, $sort2, SORT_ASC, $records);
 
-		$html .= '<div style="margin-bottom: 6px;">合计：' . count($records) . '人<table border="1" style="border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
+		$html .= '<div style="margin-bottom: 6px;">合计：' . count($records) . '人<table border="1" style="margin-top: 10px; border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
 
 		foreach ($records as $record) {
 			$activity_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->name;
@@ -232,6 +232,17 @@ class Enroll extends CI_Controller
 
 			if ($end_time < time()) {
 				return util_helper::result(null, '活动已结束，谢谢关注', '-1');
+			}
+
+			$start_time = strtotime($activity_item->start_time);
+			$end_time = strtotime($activity_item->end_time);
+
+			if ($start_time > time()) {
+				return util_helper::result(null, '报名项目未开始，敬请留意开始时间', '-1');
+			}
+
+			if ($end_time < time()) {
+				return util_helper::result(null, '报名项目已结束，谢谢关注', '-1');
 			}
 		}
 
