@@ -66,7 +66,7 @@ class Enroll extends CI_Controller
 		$sort2 = array_column($records, 'class');
 		array_multisort($sort, SORT_ASC, $sort2, SORT_ASC, $records);
 
-		$html .= '<div>总计：' . count($records) . '条<table border="1" style="border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
+		$html .= '<div style="margin-bottom: 6px;">合计：' . count($records) . '人<table border="1" style="border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
 
 		foreach ($records as $record) {
 			$activity_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->name;
