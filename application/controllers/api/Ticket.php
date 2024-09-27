@@ -87,8 +87,7 @@ class Ticket extends CI_Controller
 					$time_items = explode("|", $time_item);
 					$_time_item = $time_items[0];
 					$inventory = $time_items[1];
-				}
-				else {
+				} else {
 					$_time_item = $time_item;
 					$inventory = $this->default_inventory;
 				}
@@ -136,8 +135,7 @@ class Ticket extends CI_Controller
 					$time_spans = array();
 				}
 				$rules[$date] = $time_spans;
-			}
-			else {
+			} else {
 				if (!empty($time_spans)) {
 					$rules[$date] = $time_spans;
 				}
@@ -313,7 +311,7 @@ class Ticket extends CI_Controller
 		return Util_helper::result($result['result']);
 	}
 
-	function start_with_week($string)
+	protected function start_with_week($string)
 	{
 		return $this->start_with($string, '0:')
 			|| $this->start_with($string, '1:')
@@ -324,7 +322,7 @@ class Ticket extends CI_Controller
 			|| $this->start_with($string, '6:');
 	}
 
-	function get_weekdate($date)
+	protected function get_weekdate($date)
 	{
 		$w = date('w', strtotime($date));
 
@@ -341,8 +339,13 @@ class Ticket extends CI_Controller
 		return $data[$w];
 	}
 
-	function start_with($string, $startString)
+	protected function start_with($string, $startString)
 	{
 		return strncmp($string, $startString, strlen($startString)) === 0;
+	}
+
+	public function fetch_ticket_qrcode()
+	{
+		$url = $this->input->get_post('url');
 	}
 }

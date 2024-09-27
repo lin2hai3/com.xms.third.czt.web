@@ -30,7 +30,7 @@ class Order extends CI_Controller
 		'appid' => '11000000000000019425',
 		'mer_id' => '200408010122',
 		'mer_prtcl_no' => '2004080101220201',
-		'shop_appid' => 'wxf207735ea23c7cb5',
+		'shop_appid' => 'wxa9dd96c791e01f15',
 		'icbc_appid' => '11000000000000019425',
 	);
 
