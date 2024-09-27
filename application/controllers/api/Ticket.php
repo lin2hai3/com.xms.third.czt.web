@@ -347,5 +347,52 @@ class Ticket extends CI_Controller
 	public function fetch_ticket_qrcode()
 	{
 		$url = $this->input->get_post('url');
+		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_bg_800.jpg';
+//		$bg_img = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+
+		list($bg_width, $bg_height) = getimagesize($bg_img);
+		list($url_width, $url_height) = getimagesize($url);
+		$width = $bg_width; // 最终图像的宽度
+		$height = $bg_height + $url_height / 4 + 50; // 最终图像的高度
+
+		$dst_image = imagecreatetruecolor($width, $height); // 创建一个空白的目标图像
+		// 分配白色为背景颜色
+		$white = imagecolorallocate($dst_image, 255, 255, 255);
+		// 填充整个图像
+		imagefill($dst_image, 0, 0, $white);
+
+
+//		file_put_contents('image1.jpg', file_get_contents($bg_img));
+//		file_put_contents('image2.jpg', file_get_contents($url));
+		// 加载源图片
+		$src_image1 = imagecreatefromjpeg($bg_img);
+		$src_image2 = imagecreatefromjpeg($url);
+		$newImage = imagecreatetruecolor($url_width / 4, $url_height / 4);
+		imagecopyresampled($newImage, $src_image2, 0, 0, 0, 0, $url_width / 4, $url_height / 4, $url_width, $url_height);
+		// 分配白色为背景颜色
+		$white = imagecolorallocate($src_image2, 255, 255, 255);
+		// 填充整个图像
+		imagefill($src_image2, 0, 0, $white);
+
+		// 将源图片拷贝到目标图像中
+		imagecopyresampled($dst_image, $src_image1, 0, 0, 0, 0, $bg_width, $bg_height, imagesx($src_image1), imagesy($src_image1)); // 拷贝第一张图片到左半边
+		imagecopyresampled($dst_image, $newImage, $bg_width - $url_width / 4 - 25, $bg_height + 25, 0, 0, $url_width / 4, $url_height / 4, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
+
+		$font = 'arial.ttf';
+		$text = "xxx 欢迎您";
+		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
+		imagettftext($dst_image, 20, 0, 0, 0, $color, $font, $text);
+
+		// 保存拼接后的图像
+		$file_name = time() . '.png';
+		imagepng($dst_image, $file_name);
+
+		// 销毁图像资源
+		imagedestroy($dst_image);
+		imagedestroy($src_image1);
+		imagedestroy($src_image2);
+
+		return file_get_contents($file_name);
 	}
 }
