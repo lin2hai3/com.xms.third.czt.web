@@ -84,7 +84,7 @@ class Student extends CI_Controller
 		$student = $this->student->get($class, $seat, $name);
 
 		if (empty($student)) {
-			return Util_helper::result(null, '查不到学生，请检查班级-座号-姓名', 1);
+			return Util_helper::result(null, '查不到学生，请检查班级-座号-姓名!', 1);
 		}
 
 		$user_student = array(

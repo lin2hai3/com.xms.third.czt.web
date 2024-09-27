@@ -39,14 +39,17 @@ class Request_helper
 		curl_setopt($curl, CURLOPT_URL, $url);
 		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 60);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
 		if (!empty($proxy_host)) {
 			curl_setopt($curl, CURLOPT_PROXY, $proxy_host);
 		}
+
 		if ($json) {
 			curl_setopt($curl, CURLOPT_HTTPHEADER, [
 				'Content-Type: application/json;charset=UTF-8'
 			]);
 		}
+
 		switch ($method) {
 			case 'GET' :
 				curl_setopt($curl, CURLOPT_HTTPGET, true);
@@ -68,6 +71,7 @@ class Request_helper
 				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
 				break;
 		}
+
 		if ($protocol == 'https') {
 			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);

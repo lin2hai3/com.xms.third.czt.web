@@ -26,6 +26,14 @@ class Order extends CI_Controller
 		'wx_app_id' => 'wxa9dd96c791e01f15',
 	);
 
+	public $icbc_config = array(
+		'appid' => '11000000000000019425',
+		'mer_id' => '200408010122',
+		'mer_prtcl_no' => '2004080101220201',
+		'shop_appid' => 'wxf207735ea23c7cb5',
+		'icbc_appid' => '11000000000000019425',
+	);
+
 	// public $pay_url = 'https://aipay-fzg.fuioupay.com/aggregatePay/wxPreCreate';
 	// public $pay_url = 'https://aipaytest.fuioupay.com/aggregatePay/wxPreCreate';
 
@@ -35,9 +43,11 @@ class Order extends CI_Controller
 //	public $refund_url = 'https://aipay.fuioupay.com/aggregatePay/commonRefund';
 	public $refund_url = 'https://aipay-cloud.fuioupay.com/aggregatePay/commonRefund';
 
+	public $icbc_pay_url = 'https://gw.open.icbc.com.cn/api/cardbusiness/aggregatepay/b2c/online/consumepurchase/V1';
+
 	protected $default_inventory = 80;
 
-	private function getTicketRule($id)
+	private function get_ticket_rules($id)
 	{
 		$data = array();
 		$data['method'] = 'tickets.ticket.get';
@@ -86,8 +96,7 @@ class Order extends CI_Controller
 					$time_items = explode("|", $time_item);
 					$_time_item = $time_items[0];
 					$inventory = $time_items[1];
-				}
-				else {
+				} else {
 					$_time_item = $time_item;
 					$inventory = $this->default_inventory;
 				}
@@ -140,7 +149,7 @@ class Order extends CI_Controller
 
 
 			$_rule['date'] = $date;
-			$_rule['weekdate'] = $this->getWeekdate($date);
+			$_rule['weekdate'] = $this->get_week_date($date);
 
 			$_items = array();
 
@@ -191,7 +200,7 @@ class Order extends CI_Controller
 			|| $this->start_with($string, '6:');
 	}
 
-	function getWeekdate($date)
+	function get_week_date($date)
 	{
 		$w = date('w', strtotime($date));
 
@@ -228,7 +237,6 @@ class Order extends CI_Controller
 		$qty = $this->input->get_post('qty');
 
 
-
 		if (empty($qty)) {
 			$qty = 1;
 		}
@@ -238,9 +246,8 @@ class Order extends CI_Controller
 		if (empty($date)) {
 			$start_time = date('Y-m-d H:i:s', strtotime($time_ranges[0]));
 			$end_time = date('Y-m-d H:i:s', strtotime($time_ranges[1]));
-		}
-		else {
-			$start_time =  date('Y-m-d H:i:s', strtotime($date . ' ' . date('H:i:s', strtotime($time_ranges[0]))));
+		} else {
+			$start_time = date('Y-m-d H:i:s', strtotime($date . ' ' . date('H:i:s', strtotime($time_ranges[0]))));
 			$end_time = date('Y-m-d H:i:s', strtotime($date . ' ' . date('H:i:s', strtotime($time_ranges[1]))));
 		}
 
@@ -260,7 +267,7 @@ class Order extends CI_Controller
 		$result['stime'] = $start_time;
 		$result['etime'] = $end_time;
 
-		$rules = $this->getTicketRule($ticket_id);
+		$rules = $this->get_ticket_rules($ticket_id);
 
 		$can_add_receipt = false;
 		if (isset($rules[$date])) {
@@ -285,6 +292,121 @@ class Order extends CI_Controller
 	}
 
 	public function prepay()
+	{
+		return $this->prepay_fuiou();
+	}
+
+	public function prepay_icbc()
+	{
+		$order_amount = $this->input->get_post('amount');
+		$order_number = $this->input->get_post('order_number');
+		$member_id = $this->input->get_post('member_id');
+		$wx_open_id = $this->input->get_post('openId');
+		$sid = $this->input->get_post('sid');
+
+		if (empty($order_amount) || empty($order_number) || empty($member_id) || empty($wx_open_id) || empty($sid)) {
+			die(json_encode(array(
+				'return_code' => 100003,
+				'return_msg' => '参数不能为空'
+			)));
+		}
+
+		$notify_url = 'https://linhai.666os.com/v2/index.php/eticket/order/pay_result/' . $order_number;
+
+		$trade_no = $this->pay_config['mchnt_code'] . date('Ymd') . $order_number; // 商户订单号
+
+		$this->load->model('EtaPayLog_model', 'pay_log');
+
+		$pay_log = array(
+			'member_id' => $member_id,
+			'order_type' => 'RECEIPT',
+			'order_sn' => $order_number,
+			'trade_no' => $trade_no,
+			'times' => 0,
+			'amount' => $order_amount / 100,
+			'payment_type' => 'FUIOUPAY',
+			'out_trade_no' => '',
+			'refund_no' => '',
+			'status' => 1,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		);
+
+		$res = $this->pay_log->create($pay_log);
+
+		$biz_content = array(
+			'mer_id' => $this->icbc_config['mer_id'],
+			'out_trade_no' => $trade_no,
+			'pay_mode' => '9',
+			'access_type' => '9',
+			'mer_prtcl_no' => $this->icbc_config['mer_prtcl_no'],
+			'orig_date_time' => date('Y-m-dTH:i:s'),
+			'device_info' => 'wxapp',
+			'body' => '白马荟订单',
+			'fee_type' => '3',
+			'spbill_create_ip' => $this->get_real_ip(),
+			'total_fee' => $order_amount,
+			'mer_url' => $notify_url,
+			'shop_appid' => $this->icbc_config['shop_appid'],
+			'icbc_appid' => $this->icbc_config['icbc_appid'],
+			'openid' => $wx_open_id,
+			'notify_type' => 'HS',
+			'result_type' => '0'
+		);
+
+		$params = array(
+			'app_id' => $this->icbc_config['appid'],
+			'msg_id' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)),
+			'format' => 'json',
+			'charset' => 'UTF-8',
+			'timestamp' => date('Y-m-d H:i:s'),
+			'sign_type' => 'RSA2',
+			'biz_content' => json_encode($biz_content),
+
+//			'version' => '1.0', // 版本号,必填
+//			'mchnt_cd' => $this->pay_config['mchnt_cd'], // 富友分配的商户号 例：0002900F0313432
+//			'random_str' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)), // 随机字符串
+//			'order_amt' => $order_amount, // 订单总金额,以分为单位
+//			'mchnt_order_no' => $trade_no,
+//			'txn_begin_ts' => date('YmdHis', time()), // 交易起始时间
+//			'goods_des' => '白马荟订单', // 商品描述
+//			'term_id' => '88888888', // 终端号,随机 8 字节数字字母组合
+//			'term_ip' => $this->get_real_ip(), //
+//			'notify_url' => $notify_url, // 接收富友异步通知回调地址，通知url必须为直接可访问的url，不能携带参数主扫时必填
+//			'trade_type' => 'JSAPI', // 交易类型 JSAPI--公众号线下支付,LETPAY-小程序,LPXS--小程序线上
+//			'sub_appid' => $this->pay_config['wx_app_id'], // 子商户公众号id sub_appid 填商户或者是服务商的 appid,微信交易为商户的appid（小程序，公众号必填）
+//			'sub_openid' => $wx_open_id, // 子商户用户标识,微信公众号为用户的openid（小程序，公众号，服务窗必填）
+//			// 'sign' => '', // 签名md5(mchnt_cd+"|"+ trade_type +"|"+ order_amt +"|"+ mchnt_order_no+"|"+ txn_begin_ts+"|"+ goods_des +"|"+ term_id +"|"+ term_ip +"|"+ notify_url +"|"+ random_str +"|"+ version + "|"+ mchnt_key)
+
+		);
+
+		$sign_str = 'app_id=' . $params['app_id'] . '&biz_content=' . $params['biz_content'] . '&charset=' . $params['charset'] . '&format' . $params['format'] . '&msg_id=' . $params['msg_id'] . '&sign_type=' . $params['sign_type'] . '&timestamp=' . $params['timestamp'];
+		$sign = $this->rsa_sign($sign_str);
+
+		$params['sign'] = $sign;
+
+		log_message('DEBUG', $this->icbc_pay_url);
+		log_message('DEBUG', json_encode($params, JSON_UNESCAPED_UNICODE));
+		$result = Request_helper::api_request($this->icbc_pay_url, json_encode($params), 'POST', false, false);
+		log_message('DEBUG', 'prepay request result');
+		log_message('DEBUG', $result);
+
+		$result = json_decode($result, true);
+
+		$data = array(
+			'params' => $params,
+			'sign_str' => $sign_str,
+			'result' => $result,
+			'return' => '[]',
+			'code' => 0,
+			'msg' => 'success',
+		);
+
+		die(json_encode($data, true));
+	}
+
+
+	public function prepay_fuiou()
 	{
 		$order_amount = $this->input->get_post('amount');
 		$order_number = $this->input->get_post('order_number');
@@ -331,7 +453,7 @@ class Order extends CI_Controller
 			'txn_begin_ts' => date('YmdHis', time()), // 交易起始时间
 			'goods_des' => '白马荟订单', // 商品描述
 			'term_id' => '88888888', // 终端号,随机 8 字节数字字母组合
-			'term_ip' => $this->getRealIp(), //
+			'term_ip' => $this->get_real_ip(), //
 			'notify_url' => $notify_url, // 接收富友异步通知回调地址，通知url必须为直接可访问的url，不能携带参数主扫时必填
 			'trade_type' => 'JSAPI', // 交易类型 JSAPI--公众号线下支付,LETPAY-小程序,LPXS--小程序线上
 			'sub_appid' => $this->pay_config['wx_app_id'], // 子商户公众号id sub_appid 填商户或者是服务商的 appid,微信交易为商户的appid（小程序，公众号必填）
@@ -366,7 +488,7 @@ class Order extends CI_Controller
 
 	}
 
-	function getRealIp()
+	function get_real_ip()
 	{
 		$ip = false;
 		if (!empty($_SERVER["HTTP_CLIENT_IP"])) {
@@ -389,7 +511,7 @@ class Order extends CI_Controller
 	}
 
 	//通过curl模拟post的请求；
-	public function SendDataByCurl($url, $data, $header)
+	public function send_data_by_curl($url, $data, $header)
 	{
 		// $header = array(
 		//	"Content-Type: application/json",
@@ -446,8 +568,8 @@ class Order extends CI_Controller
 		$this->load->model('EtaPayLog_model', 'pay_log');
 		$last = $this->pay_log->get_last($order_number);
 
-		$trade_no =  $last->trade_no;
-		$refund_no =  $last->trade_no . 'R';
+		$trade_no = $last->trade_no;
+		$refund_no = $last->trade_no . 'R';
 		$order_amount = $last->amount * 100;
 		$refund_amount = $last->amount * 100;
 
@@ -478,5 +600,38 @@ class Order extends CI_Controller
 		);
 
 		die(json_encode($data, true));
+	}
+
+
+	public function rsa_sign($content, $privateKey = '')
+	{
+		if (empty($private_key)) {
+			$private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo\n-----END PRIVATE KEY-----";
+		}
+
+		openssl_sign($content, $signature, $private_key, OPENSSL_ALGO_SHA256);
+		return base64_encode($signature);
+	}
+
+	public function rsa_private_encrypt($data, $private_key = '')
+	{
+		if (empty($private_key)) {
+			$private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo\n-----END PRIVATE KEY-----";
+		}
+
+		//这个函数可用来判断私钥是否是可用的，可用返回资源id Resource id
+		$pi_key = openssl_pkey_get_private($private_key);
+
+		if (empty($pi_key)) {
+			return 'error encrypt';
+		}
+
+		//加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
+		openssl_private_encrypt($data, $encrypted, $pi_key);
+		$encrypted = base64_encode($encrypted);
+
+		return 'dddcccc';
+
+		return $encrypted;
 	}
 }

@@ -18,6 +18,9 @@ class Enroll extends CI_Controller
 
 	public function index()
 	{
+		show_404();
+		return;
+
 		$class = $this->input->get_post('class');
 		$keyword = $this->input->get_post('keyword');
 		$activity_item_no = $this->input->get_post('activity_item_no');
@@ -44,7 +47,7 @@ class Enroll extends CI_Controller
 			$html .= '<option value="' . $item . '" ' . ($class == $item ? 'selected' : '' ) . '>' . $item . '</option>';
 		}
 
-		$html .= '</select>活动：<select name="activity_item_no"><option value="">全部课程</option>';
+		$html .= '</select>课程：<select name="activity_item_no"><option value="">全部课程</option>';
 
 		foreach ($activity_items as $item) {
 			$html .= '<option value="' . $item->no . '" ' . ($activity_item_no == $item->no ? 'selected' : '' ) . '>' . $item->name . '</option>';
@@ -68,14 +71,92 @@ class Enroll extends CI_Controller
 
 		$html .= '<div style="margin-bottom: 6px;">合计：' . count($records) . '人<table border="1" style="margin-top: 10px; border-collapse:collapse;border: solid 1px #000000;"><tr><td>活动名称</td><td>班级</td><td>名称</td></tr>';
 
+		$count = 0;
+		$count_name = '';
 		foreach ($records as $record) {
-			$activity_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->name;
-			$html .= '<tr><td>' . $activity_name . '</td><td>' . $record['class'] . '</td><td>' . $record['name'] . '</td></tr>';
+
+			$item_name = empty($_activity_items[$record['item_no']]) ? '' : $_activity_items[$record['item_no']]->name;
+
+			if ($count_name == '') {
+				$count_name = $item_name;
+			}
+
+			if ($count_name != '' && $count_name != $item_name) {
+				$html .= '<tr><td>合计</td><td>&nbsp;</td><td>' . $count . '</td></tr>';
+				$count_name = $item_name;
+				$count = 0;
+			}
+
+			$html .= '<tr><td>' . $item_name . '</td><td>' . $record['class'] . '</td><td>' . $record['name'] . '</td></tr>';
+
+			$count++;
 		}
+
+		$html .= '<tr><td>合计</td><td>&nbsp;</td><td>' . $count . '</td></tr>';
 
 		$html .= '</table></div>';
 
 		echo $html;
+	}
+
+	public function index2()
+	{
+		show_404();
+		return;
+
+		$no = $this->input->get_post('no');
+
+		$this->load->model('Enroll_model', 'enroll');
+		$this->load->model('Student_model', 'student');
+		$this->load->model('Activity_model', 'activity');
+
+		if (empty($no)) {
+			$no = 1004;
+		}
+
+		$items = $this->activity->items($no, 1);
+		$students = $this->student->getAll($no);
+		$records = $this->enroll->getRecords(array(
+			'activity_no' => $no,
+			'status' => 1
+		));
+
+		$items = json_decode(json_encode($items), true);
+		$records = json_decode(json_encode($records), true);
+		$students = json_decode(json_encode($students), true);
+
+		$_items = array();
+		foreach ($items as $item) {
+			$_items[$item['no']] = $item['name'];
+		}
+
+		$_records = array();
+		foreach ($records as $record)
+		{
+			$key = $record['class'] . '_' . $record['name'];
+			$_records[$key] = $record['item_no'];
+		}
+
+		echo '<table border="1" style="margin-top: 10px; border-collapse:collapse;border: solid 1px #000000;">';
+		foreach ($students as $student)
+		{
+			$key = $student['class'] . '_' . $student['name'];
+
+			echo '<tr>';
+			echo '<td>' . $student['class'] . '</td>';
+			echo '<td>' . $student['seat'] . '</td>';
+			echo '<td>' . $student['name'] . '</td>';
+
+			if (!empty($_records[$key])) {
+				echo '<td>' . $_items[$_records[$key]] . '</td>';
+			}
+			else {
+				echo '<td></td>';
+			}
+
+			echo '</tr>';
+		}
+		echo '</table>';
 	}
 
 	public function show()

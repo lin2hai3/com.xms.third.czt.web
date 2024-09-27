@@ -46,6 +46,13 @@ class Student_model extends CI_Model
 		return $rows2;
 	}
 
+	public function getAll($activity_no)
+	{
+		$this->db->where('activity_no', $activity_no);
+		$this->db->where('status', 1);
+		return $this->db->get('student')->result();
+	}
+
 	public function checkClassAndName($record)
 	{
 		$this->db->where('activity_no', $record['activity_no']);
