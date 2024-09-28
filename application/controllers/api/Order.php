@@ -335,33 +335,33 @@ class Order extends CI_Controller
 		$res = $this->pay_log->create($pay_log);
 
 		$biz_content = array(
+			'access_type' => '9',
+			'body' => 'Ticket',
+			'device_info' => 'wxapp',
+			'fee_type' => '3',
+			'icbc_appid' => $this->icbc_config['icbc_appid'],
 			'mer_id' => $this->icbc_config['mer_id'],
+			'mer_prtcl_no' => $this->icbc_config['mer_prtcl_no'],
+			'mer_url' => $notify_url,
+			'notify_type' => 'HS',
+			'openid' => $wx_open_id,
+			'orig_date_time' => date('Y-m-d') . 'T' .date('H:i:s'),
 			'out_trade_no' => $trade_no,
 			'pay_mode' => '9',
-			'access_type' => '9',
-			'mer_prtcl_no' => $this->icbc_config['mer_prtcl_no'],
-			'orig_date_time' => date('Y-m-dTH:i:s'),
-			'device_info' => 'wxapp',
-			'body' => '白马荟订单',
-			'fee_type' => '3',
+			'result_type' => '0',
+			'shop_appid' => $this->icbc_config['shop_appid'],
 			'spbill_create_ip' => $this->get_real_ip(),
 			'total_fee' => $order_amount,
-			'mer_url' => $notify_url,
-			'shop_appid' => $this->icbc_config['shop_appid'],
-			'icbc_appid' => $this->icbc_config['icbc_appid'],
-			'openid' => $wx_open_id,
-			'notify_type' => 'HS',
-			'result_type' => '0'
 		);
 
 		$params = array(
 			'app_id' => $this->icbc_config['appid'],
-			'msg_id' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)),
-			'format' => 'json',
+			'biz_content' => json_encode($biz_content, JSON_UNESCAPED_SLASHES),
 			'charset' => 'UTF-8',
-			'timestamp' => date('Y-m-d H:i:s'),
+			'format' => 'json',
+			'msg_id' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)),
 			'sign_type' => 'RSA2',
-			'biz_content' => json_encode($biz_content),
+			'timestamp' => date('Y-m-d H:i:s'),
 
 //			'version' => '1.0', // 版本号,必填
 //			'mchnt_cd' => $this->pay_config['mchnt_cd'], // 富友分配的商户号 例：0002900F0313432
@@ -380,14 +380,14 @@ class Order extends CI_Controller
 
 		);
 
-		$sign_str = 'app_id=' . $params['app_id'] . '&biz_content=' . $params['biz_content'] . '&charset=' . $params['charset'] . '&format' . $params['format'] . '&msg_id=' . $params['msg_id'] . '&sign_type=' . $params['sign_type'] . '&timestamp=' . $params['timestamp'];
+		$sign_str = 'app_id=' . $params['app_id'] . '&biz_content=' . $params['biz_content'] . '&charset=' . $params['charset'] . '&format=' . $params['format'] . '&msg_id=' . $params['msg_id'] . '&sign_type=' . $params['sign_type'] . '&timestamp=' . $params['timestamp'];
 		$sign = $this->rsa_sign($sign_str);
 
 		$params['sign'] = $sign;
 
 		log_message('DEBUG', $this->icbc_pay_url);
 		log_message('DEBUG', json_encode($params, JSON_UNESCAPED_UNICODE));
-		$result = Request_helper::api_request($this->icbc_pay_url, json_encode($params), 'POST', false, false);
+		$result = Request_helper::icbc_request($this->icbc_pay_url, json_encode($params), 'GET', false, false);
 		log_message('DEBUG', 'prepay request result');
 		log_message('DEBUG', $result);
 

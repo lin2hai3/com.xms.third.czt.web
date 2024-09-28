@@ -1,11 +1,11 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 class Member extends CI_Controller
 {
 	public function index()
 	{
-		
+
 	}
 
 	public function show()
@@ -58,6 +58,22 @@ class Member extends CI_Controller
 		if ($result['result']['id'] == 2840) {
 			$result['result']['flag'] = 'A';
 		}
+
+		die(json_encode($result));
+	}
+
+	public function get_sid()
+	{
+		$id = $this->input->get_post('id');
+
+		$params = array(
+			'method' => 'weixin.member.id.get',
+			'fields' => '*',
+			'weixin_id' => $id,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
 
 		die(json_encode($result));
 	}

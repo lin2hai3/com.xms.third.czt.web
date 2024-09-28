@@ -83,6 +83,76 @@ class Request_helper
 		return $data;
 	}
 
+	public static function icbc_request($url, $data, $method, $encode = true, $json = true, $proxy_host = '')
+	{
+		$protocol = 'http';
+		if (strpos($url, '://') !== false) {
+			$explode_arr = explode('://', $url);
+			$protocol = $explode_arr[0];
+		}
+		$method = strtoupper($method);
+		$data_fields = '';
+		if ($encode && (is_array($data) || is_object($data))) {
+			$data_fields = http_build_query($data);
+		} else {
+			$data_fields = $data;
+		}
+		if ($method == 'GET' && $encode && $data_fields) {
+			$url .= '?' . $data_fields;
+		}
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 60);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
+		if (!empty($proxy_host)) {
+			curl_setopt($curl, CURLOPT_PROXY, $proxy_host);
+		}
+
+//		if ($json) {
+//			curl_setopt($curl, CURLOPT_HTTPHEADER, [
+//				'Content-Type: application/json;charset=UTF-8'
+//			]);
+//		}
+
+		curl_setopt($curl, CURLOPT_HTTPHEADER, [
+			'Content-Type: application/x-www-form-urlencoded;charset=UTF-8'
+		]);
+
+		switch ($method) {
+			case 'GET' :
+				curl_setopt($curl, CURLOPT_HTTPGET, true);
+				break;
+			case 'POST':
+				curl_setopt($curl, CURLOPT_POST, true);
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
+				break;
+			case 'PATCH':
+				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PATCH');
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
+				break;
+			case 'PUT':
+				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PUT');
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
+				break;
+			case 'DELETE':
+				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'DELETE');
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
+				break;
+		}
+
+		if ($protocol == 'https') {
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+			curl_setopt($curl, CURLOPT_SSLVERSION, 1);
+		}
+
+		$data = curl_exec($curl);
+		curl_close($curl);
+		return $data;
+	}
+
+
 	/**
 	 * 发起http请求
 	 * @param string $url 请求网址
