@@ -384,7 +384,7 @@ class Ticket extends CI_Controller
 		$font = 'msyh.ttc';
 		$text = "府城英歌舞体验馆欢迎您";
 		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
-		imagefttext($dst_image, 30, 0, 100, $bg_height + $new_height / 2 + 25, $color, $font, $text);
+		imagefttext($dst_image, 30, 0, 125, $bg_height + $new_height / 2 + 40, $color, $font, $text);
 
 		// 保存拼接后的图像
 		$file_name = time() . '.png';
