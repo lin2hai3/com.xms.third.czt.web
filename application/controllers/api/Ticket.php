@@ -353,8 +353,12 @@ class Ticket extends CI_Controller
 
 		list($bg_width, $bg_height) = getimagesize($bg_img);
 		list($url_width, $url_height) = getimagesize($url);
+		//把二维码压缩
+		$new_width = $url_width / 4;
+		$new_height = $url_height / 4;
+
 		$width = $bg_width; // 最终图像的宽度
-		$height = $bg_height + $url_height / 4 + 50; // 最终图像的高度
+		$height = $bg_height + $new_height + 50; // 最终图像的高度
 
 		$dst_image = imagecreatetruecolor($width, $height); // 创建一个空白的目标图像
 		// 分配白色为背景颜色
@@ -368,21 +372,19 @@ class Ticket extends CI_Controller
 		// 加载源图片
 		$src_image1 = imagecreatefromjpeg($bg_img);
 		$src_image2 = imagecreatefromjpeg($url);
-		$newImage = imagecreatetruecolor($url_width / 4, $url_height / 4);
-		imagecopyresampled($newImage, $src_image2, 0, 0, 0, 0, $url_width / 4, $url_height / 4, $url_width, $url_height);
-		// 分配白色为背景颜色
-		$white = imagecolorallocate($src_image2, 255, 255, 255);
-		// 填充整个图像
-		imagefill($src_image2, 0, 0, $white);
+
+		//压缩二维码
+		$newImage = imagecreatetruecolor($new_width, $new_height);
+		imagecopyresampled($newImage, $src_image2, 0, 0, 0, 0, $new_width, $new_height, $url_width, $url_height);
 
 		// 将源图片拷贝到目标图像中
 		imagecopyresampled($dst_image, $src_image1, 0, 0, 0, 0, $bg_width, $bg_height, imagesx($src_image1), imagesy($src_image1)); // 拷贝第一张图片到左半边
-		imagecopyresampled($dst_image, $newImage, $bg_width - $url_width / 4 - 25, $bg_height + 25, 0, 0, $url_width / 4, $url_height / 4, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
+		imagecopyresampled($dst_image, $newImage, $bg_width - $new_width - 25, $bg_height + 25, 0, 0, $new_width, $new_height, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
 
-		$font = 'arial.ttf';
-		$text = "xxx 欢迎您";
+		$font = 'msyh.ttc';
+		$text = "府城英歌舞体验馆欢迎您";
 		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
-		imagettftext($dst_image, 20, 0, 0, 0, $color, $font, $text);
+		imagefttext($dst_image, 30, 0, 100, $bg_height + $new_height / 2 + 25, $color, $font, $text);
 
 		// 保存拼接后的图像
 		$file_name = time() . '.png';
@@ -392,7 +394,12 @@ class Ticket extends CI_Controller
 		imagedestroy($dst_image);
 		imagedestroy($src_image1);
 		imagedestroy($src_image2);
+		imagedestroy($newImage);
 
-		return file_get_contents($file_name);
+		$contents = file_get_contents($file_name);
+		//删除图片文件
+		unlink($file_name);
+
+		return $contents;
 	}
 }
