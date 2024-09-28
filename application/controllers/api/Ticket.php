@@ -347,5 +347,59 @@ class Ticket extends CI_Controller
 	public function fetch_ticket_qrcode()
 	{
 		$url = $this->input->get_post('url');
+		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_bg_800.jpg';
+//		$bg_img = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+
+		list($bg_width, $bg_height) = getimagesize($bg_img);
+		list($url_width, $url_height) = getimagesize($url);
+		//把二维码压缩
+		$new_width = $url_width / 4;
+		$new_height = $url_height / 4;
+
+		$width = $bg_width; // 最终图像的宽度
+		$height = $bg_height + $new_height + 50; // 最终图像的高度
+
+		$dst_image = imagecreatetruecolor($width, $height); // 创建一个空白的目标图像
+		// 分配白色为背景颜色
+		$white = imagecolorallocate($dst_image, 255, 255, 255);
+		// 填充整个图像
+		imagefill($dst_image, 0, 0, $white);
+
+
+//		file_put_contents('image1.jpg', file_get_contents($bg_img));
+//		file_put_contents('image2.jpg', file_get_contents($url));
+		// 加载源图片
+		$src_image1 = imagecreatefromjpeg($bg_img);
+		$src_image2 = imagecreatefromjpeg($url);
+
+		//压缩二维码
+		$newImage = imagecreatetruecolor($new_width, $new_height);
+		imagecopyresampled($newImage, $src_image2, 0, 0, 0, 0, $new_width, $new_height, $url_width, $url_height);
+
+		// 将源图片拷贝到目标图像中
+		imagecopyresampled($dst_image, $src_image1, 0, 0, 0, 0, $bg_width, $bg_height, imagesx($src_image1), imagesy($src_image1)); // 拷贝第一张图片到左半边
+		imagecopyresampled($dst_image, $newImage, $bg_width - $new_width - 25, $bg_height + 25, 0, 0, $new_width, $new_height, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
+
+		$font = 'msyh.ttc';
+		$text = "府城英歌舞体验馆欢迎您";
+		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
+		imagefttext($dst_image, 30, 0, 125, $bg_height + $new_height / 2 + 40, $color, $font, $text);
+
+		// 保存拼接后的图像
+		$file_name = time() . '.png';
+		imagepng($dst_image, $file_name);
+
+		// 销毁图像资源
+		imagedestroy($dst_image);
+		imagedestroy($src_image1);
+		imagedestroy($src_image2);
+		imagedestroy($newImage);
+
+		$contents = file_get_contents($file_name);
+		//删除图片文件
+		unlink($file_name);
+
+		return $contents;
 	}
 }
