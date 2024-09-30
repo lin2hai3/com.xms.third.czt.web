@@ -348,7 +348,7 @@ class Ticket extends CI_Controller
 	{
 		$url = $this->input->get_post('url');
 		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
-		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_bg_800.jpg';
+		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_2.jpg';
 //		$bg_img = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
 
 		list($bg_width, $bg_height) = getimagesize($bg_img);
@@ -360,7 +360,7 @@ class Ticket extends CI_Controller
 		$width = $bg_width; // 最终图像的宽度
 		$height = $bg_height + $new_height + 50; // 最终图像的高度
 
-		$dst_image = imagecreatetruecolor($width, $height); // 创建一个空白的目标图像
+		$dst_image = imagecreatetruecolor($bg_width, $bg_height); // 创建一个空白的目标图像
 		// 分配白色为背景颜色
 		$white = imagecolorallocate($dst_image, 255, 255, 255);
 		// 填充整个图像
@@ -379,7 +379,7 @@ class Ticket extends CI_Controller
 
 		// 将源图片拷贝到目标图像中
 		imagecopyresampled($dst_image, $src_image1, 0, 0, 0, 0, $bg_width, $bg_height, imagesx($src_image1), imagesy($src_image1)); // 拷贝第一张图片到左半边
-		imagecopyresampled($dst_image, $newImage, $bg_width - $new_width - 25, $bg_height + 25, 0, 0, $new_width, $new_height, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
+		imagecopyresampled($dst_image, $newImage, 220, 827, 0, 0, $new_width, $new_height, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
 
 //		$font = 'msyh.ttc';
 		$font = "/html/linhai/assets/fonts/msyhbd.ttc";;
