@@ -3,6 +3,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Ticket extends CI_Controller
 {
+	protected $test_ids = 328;
+
+	// protected $test_ids = '';
+
 	protected $default_inventory = 80;
 
 	public function index()
@@ -18,6 +22,34 @@ class Ticket extends CI_Controller
 		$params['page_size'] = $pagination->limit;
 		$params['keyword'] = $keyword;
 		$params['orderby'] = 'id DESC';
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		$pagination = Util_helper::getPagination($page);
+		$pagination->setCount($result['result']['total_results']);
+		$result['result']['pagination'] = $pagination;
+
+		return Util_helper::result($result['result']);
+	}
+
+	public function page_index()
+	{
+		$page = $this->input->get_post('page');
+		$keyword = $this->input->get_post('keyword');
+		$pagination = Util_helper::getPagination($page);
+
+		$params = array();
+		$params['method'] = 'tickets.tickets.get';
+		$params['fields'] = '*';
+		$params['page'] = $page;
+		$params['page_size'] = $pagination->limit;
+		$params['keyword'] = $keyword;
+		$params['orderby'] = 'id DESC';
+
+		if (!empty($this->test_ids)) {
+			$params['ids'] = $this->test_ids;
+		}
 
 		$result = EtaApp_helper::load($params);
 		$result = json_decode($result, true);
@@ -48,6 +80,12 @@ class Ticket extends CI_Controller
 
 		$result = EtaApp_helper::load($data);
 		$result = json_decode($result, true);
+
+
+		$result['result']['show_share'] = false;
+		if (in_array($id, array(332))) {
+			$result['result']['show_share'] = true;
+		}
 
 		$extend = '';
 		if (isset($result['result']['extend'])) {

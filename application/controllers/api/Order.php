@@ -1,4 +1,8 @@
 <?php
+
+use App\Utils\RequestUtil;
+use App\Utils\Utils;
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 
@@ -25,12 +29,26 @@ class Order extends CI_Controller
 
 	public $icbc_config = array(
 		'appid' => '11000000000000019425',
-		'mer_id' => '200408010122',
-		'mer_prtcl_no' => '2004080101220201',
-		'shop_appid' => 'wxa9dd96c791e01f15',
+		// 'mer_id' => '200408010122',
+		// 'mer_prtcl_no' => '2004080101220201',
+		// 'shop_appid' => 'wxa9dd96c791e01f15',
+
 		'icbc_appid' => '11000000000000019425',
 		'private_key' => "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo",
 		'icbc_public_key' => "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIpiPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZERkx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4+EBpXo8gNiAFsNwIDAQAB",
+
+		'mer_id' => '200408010110',
+		'mer_prtcl_no' => '2004080101100201',
+		'shop_appid' => 'wxf207735ea23c7cb5',
+	);
+
+	public $wxapp_config = array(
+		'app_id' => 'wxa9dd96c791e01f15',
+		'mch_id' => '1648433735',
+		'pay_key' => 'H0exWtzZmkJWBSmlX9dxxufQhg8QBfnR',
+		'pay_key3' => 'T3LFX82M7geztbc9C9wuwomWdBsR1tRQ',
+		'sign_type' => 'MD5',
+		'trade_type' => 'JSAPI',
 	);
 
 	// public $pay_url = 'https://aipay-fzg.fuioupay.com/aggregatePay/wxPreCreate';
@@ -43,6 +61,8 @@ class Order extends CI_Controller
 	public $refund_url = 'https://aipay-cloud.fuioupay.com/aggregatePay/commonRefund';
 
 	public $icbc_pay_url = 'https://gw.open.icbc.com.cn/api/cardbusiness/aggregatepay/b2c/online/consumepurchase/V1';
+
+	private $wxapp_pay_url = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
 
 	protected $default_inventory = 80;
 
@@ -292,7 +312,7 @@ class Order extends CI_Controller
 
 	public function prepay()
 	{
-		return $this->prepay_fuiou();
+		return $this->prepay_wxapp();
 	}
 
 	public function prepay_icbc()
@@ -323,7 +343,7 @@ class Order extends CI_Controller
 			'trade_no' => $trade_no,
 			'times' => 0,
 			'amount' => $order_amount / 100,
-			'payment_type' => 'FUIOUPAY',
+			'payment_type' => 'ICBC',
 			'out_trade_no' => '',
 			'refund_no' => '',
 			'status' => 1,
@@ -386,10 +406,21 @@ class Order extends CI_Controller
 
 		$result = $helper->execute($params, $msg_id, '');
 
+		$result = json_decode($result, true);
+		$prepay_result = json_decode($result['wx_data_package'], true);
+
+		$prepay_result['nonceStr'] = $prepay_result['noncestr'];
+		$prepay_result['paySign'] = $prepay_result['sign'];
+		$prepay_result['timeStamp'] = $prepay_result['timestamp'];
+
+		unset($prepay_result['noncestr']);
+		unset($prepay_result['sign']);
+		unset($prepay_result['timestamp']);
+
 		$data = array(
 			'params' => $params,
 			'sign_str' => '',
-			'result' => $result,
+			'result' => $prepay_result,
 			'return' => '[]',
 			'code' => 0,
 			'msg' => 'success',
@@ -476,6 +507,97 @@ class Order extends CI_Controller
 		die(json_encode($data, true));
 	}
 
+	public function prepay_wxapp()
+	{
+		$order_amount = $this->input->get_post('amount');
+		$order_number = $this->input->get_post('order_number');
+		$member_id = $this->input->get_post('member_id');
+		$wx_open_id = $this->input->get_post('openId');
+		$sid = $this->input->get_post('sid');
+
+		if (empty($order_amount) || empty($order_number) || empty($member_id) || empty($wx_open_id) || empty($sid)) {
+			die(json_encode(array(
+				'return_code' => 100003,
+				'return_msg' => '参数不能为空'
+			)));
+		}
+
+		$notify_url = 'https://linhai.666os.com/v2/index.php/eticket/order/pay_result/' . $order_number;
+
+		$trade_no = $this->pay_config['mchnt_code'] . date('Ymd') . $order_number; // 商户订单号
+
+		$this->load->model('EtaPayLog_model', 'pay_log');
+
+		$pay_log = array(
+			'member_id' => $member_id,
+			'order_type' => 'RECEIPT',
+			'order_sn' => $order_number,
+			'trade_no' => $trade_no,
+			'times' => 0,
+			'amount' => $order_amount / 100,
+			'payment_type' => 'WXAPP',
+			'out_trade_no' => '',
+			'refund_no' => '',
+			'status' => 1,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		);
+
+		$res = $this->pay_log->create($pay_log);
+
+
+		$params = [
+			'appid' => $this->wxapp_config['app_id'],
+			'mch_id' => $this->wxapp_config['mch_id'],
+			'device_info' => '1000',
+			'nonce_str' => md5(date('Y-m-d H:i:s')),
+			'sign_type' => $this->wxapp_config['sign_type'],
+			'trade_type' => $this->wxapp_config['trade_type'],
+			'body' => '白马荟订单',      //商品简单描述String(128)
+			'detail' => '购票',   //商品详细描述，对于使用单品优惠的商户，该字段必须按照规范上传
+			'attach' => '无',     //附加数据，在查询API和支付通知中原样返回，可作为自定义参数使用
+			'out_trade_no' => $order_number,
+			'total_fee' => $order_amount,
+			'spbill_create_ip' => $this->get_real_ip(),
+			'notify_url' => $notify_url,
+			'openid' => $wx_open_id,
+		];
+
+		$params['sign'] = self::md5Sign($params, $this->wxapp_config['pay_key']);
+
+		$params = self::arrayToXml($params);
+
+		$response = Request_helper::request($this->wxapp_pay_url, $params, 'POST', false, false);
+
+		$response = self::xmlToArray($response);
+
+		// die(json_encode($response));
+
+		$res = array();
+		$res['return_code'] = $response['return_code'];
+		$res['result_code'] = isset($response['result_code']) ? $response['result_code'] : 'FAIL';
+
+		if ($response['return_code'] == 'SUCCESS' && $response['result_code'] == 'SUCCESS') {
+
+			$result = self::buildJsApiData($response, $this->wxapp_config['pay_key']);
+			$data = array(
+				'code' => 0,
+				'msg' => 'success',
+				'result' => json_decode($result),
+				'return' => array(),
+			);
+		}
+		else {
+			$data = array(
+				'code' => -1,
+				'msg' => 'error',
+				'result' => array(),
+			);
+		}
+
+		die(json_encode($data));
+	}
+
 	public function pay_result()
 	{
 
@@ -551,7 +673,7 @@ class Order extends CI_Controller
 		}
 		return $key;
 	}
-	
+
 	public function cancel()
 	{
 		$order_number = $this->input->get_post('order_number');
@@ -667,4 +789,121 @@ class Order extends CI_Controller
 		die(json_encode($result));
 	}
 
+	private static function md5Sign($params, $pay_key)
+	{
+		$sign_str = self::buildSignStr($params);
+		$sign_str .= '&key=' . $pay_key;
+		$sign = md5($sign_str);
+		$sign = strtoupper($sign);
+		return $sign;
+	}
+
+	public static function buildSignStr($params, $separator = '&')
+	{
+		$sign_str = '';
+
+		if (is_array($params)) {
+			ksort($params);
+			foreach ($params as $key => $value) {
+				if (empty($value) || $key == 'sign') {
+					continue;
+				}
+
+				if ($sign_str != '') {
+					$sign_str .= $separator;
+				}
+
+				$sign_str .= $key . '=' . $value;
+			}
+		}
+
+		return $sign_str;
+	}
+
+	public static function arrayToXml($array)
+	{
+		if (!is_array($array) || count($array) <= 0) {
+			throw new \Exception('数组数据异常！');
+		}
+
+		$xml = "<xml>";
+		foreach ($array as $key => $val) {
+			if (is_numeric($val)) {
+				$xml .= "<" . $key . ">" . $val . "</" . $key . ">";
+			} else {
+				$xml .= "<" . $key . "><![CDATA[" . $val . "]]></" . $key . ">";
+			}
+		}
+		$xml .= "</xml>";
+
+		return $xml;
+	}
+
+	public static function xmlToArray($xml)
+	{
+		if (!$xml) {
+			return false;
+		}
+		//将XML转为array
+		//禁止引用外部xml实体
+		libxml_disable_entity_loader(true);
+		$result = json_decode(json_encode(simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
+		return $result;
+	}
+
+	public function buildJsApiData($result, $pay_key)
+	{
+		if (!array_key_exists('appid', $result)
+			|| !array_key_exists('prepay_id', $result)
+			|| $result['prepay_id'] == '') {
+			throw new \Exception('参数错误');
+		}
+
+		$params = [
+			'appId' => $result['appid'],
+			'timeStamp' => time() . '',
+			'nonceStr' => self::generateRandomString('lower-digit', 32),
+			'package' => 'prepay_id=' . $result['prepay_id'],
+			'signType' => 'MD5'
+		];
+
+		$params['paySign'] = self::md5Sign($params, $pay_key);
+		return json_encode($params);
+	}
+
+	public static function generateRandomString($filter = 'all', $length = 6)
+	{
+		$seed = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890';
+
+		switch ($filter) {
+			case 'upper':
+				$seed = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				break;
+
+			case 'lower':
+				$seed = 'abcdefghijklmnopqrstuvwxyz';
+				break;
+
+			case 'digit':
+				$seed = '0123456789';
+				break;
+
+			case 'upper-digit':
+				$seed = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+				break;
+
+			case 'lower-digit':
+				$seed = 'abcdefghijklmnopqrstuvwxyz0123456789';
+				break;
+		}
+
+		$random_str = '';
+		$seed_length = strlen($seed);
+
+		while ($length--) {
+			$random_str .= $seed[rand(0, $seed_length - 1)];
+		}
+
+		return $random_str;
+	}
 }
