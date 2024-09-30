@@ -381,7 +381,9 @@ class Ticket extends CI_Controller
 		imagecopyresampled($dst_image, $src_image1, 0, 0, 0, 0, $bg_width, $bg_height, imagesx($src_image1), imagesy($src_image1)); // 拷贝第一张图片到左半边
 		imagecopyresampled($dst_image, $newImage, $bg_width - $new_width - 25, $bg_height + 25, 0, 0, $new_width, $new_height, imagesx($newImage), imagesy($newImage)); // 拷贝第二张图片到右半边
 
-		$font = 'msyh.ttc';
+//		$font = 'msyh.ttc';
+		$font = "/html/linhai/assets/fonts/msyhbd.ttc";;
+
 		$text = "府城英歌舞体验馆欢迎您";
 		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
 		imagefttext($dst_image, 30, 0, 125, $bg_height + $new_height / 2 + 40, $color, $font, $text);
@@ -396,10 +398,35 @@ class Ticket extends CI_Controller
 		imagedestroy($src_image2);
 		imagedestroy($newImage);
 
-		$contents = file_get_contents($file_name);
+		$content = file_get_contents('/html/linhai/v2/' . $file_name);
+		$content = base64_encode($content);
+
 		//删除图片文件
 		unlink($file_name);
 
-		return $contents;
+		if ($content !== false) {
+			$data = array(
+				'code' => 0,
+				'msg' => 'success!',
+				'result' => $content
+			);
+		} else {
+			$data = array(
+				'code' => 1,
+				'msg' => '读取文件失败',
+			);
+		}
+
+		die(json_encode($data));
 	}
+
+//	public function test()
+//	{
+//		$fonts = shell_exec('fc-list 2>/dev/null');
+//
+//		// 清理输出并去除重复字体
+//		$fontArray = array_unique(explode("\n", $fonts));
+//
+//		print_r($fontArray);
+//	}
 }

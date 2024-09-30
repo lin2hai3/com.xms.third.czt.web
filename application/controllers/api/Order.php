@@ -1,7 +1,4 @@
 <?php
-
-use App\Utils\Utils;
-
 defined('BASEPATH') or exit('No direct script access allowed');
 
 
@@ -32,6 +29,8 @@ class Order extends CI_Controller
 		'mer_prtcl_no' => '2004080101220201',
 		'shop_appid' => 'wxa9dd96c791e01f15',
 		'icbc_appid' => '11000000000000019425',
+		'private_key' => "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo",
+		'icbc_public_key' => "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIpiPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZERkx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4+EBpXo8gNiAFsNwIDAQAB",
 	);
 
 	// public $pay_url = 'https://aipay-fzg.fuioupay.com/aggregatePay/wxPreCreate';
@@ -337,15 +336,16 @@ class Order extends CI_Controller
 		$biz_content = array(
 			'access_type' => '9',
 			'body' => 'Ticket',
-			'device_info' => 'wxapp',
-			'fee_type' => '3',
+			// 'device_info' => '0123456789012345678912',
+			'decive_info' => '0123456789012345678912',
+			'fee_type' => '001',
 			'icbc_appid' => $this->icbc_config['icbc_appid'],
 			'mer_id' => $this->icbc_config['mer_id'],
 			'mer_prtcl_no' => $this->icbc_config['mer_prtcl_no'],
 			'mer_url' => $notify_url,
 			'notify_type' => 'HS',
-			'openid' => $wx_open_id,
-			'orig_date_time' => date('Y-m-d') . 'T' .date('H:i:s'),
+			'open_id' => $wx_open_id,
+			'orig_date_time' => date('Y-m-d') . 'T' . date('H:i:s'),
 			'out_trade_no' => $trade_no,
 			'pay_mode' => '9',
 			'result_type' => '0',
@@ -354,48 +354,41 @@ class Order extends CI_Controller
 			'total_fee' => $order_amount,
 		);
 
+		$msg_id = md5(date('Y-m-d H:i:s') . rand(1000, 9999));
+
 		$params = array(
 			'app_id' => $this->icbc_config['appid'],
 			'biz_content' => json_encode($biz_content, JSON_UNESCAPED_SLASHES),
+			'ca' => '',
 			'charset' => 'UTF-8',
 			'format' => 'json',
-			'msg_id' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)),
-			'sign_type' => 'RSA2',
-			'timestamp' => date('Y-m-d H:i:s'),
-
-//			'version' => '1.0', // 版本号,必填
-//			'mchnt_cd' => $this->pay_config['mchnt_cd'], // 富友分配的商户号 例：0002900F0313432
-//			'random_str' => md5(date('Y-m-d H:i:s') . rand(1000, 9999)), // 随机字符串
-//			'order_amt' => $order_amount, // 订单总金额,以分为单位
-//			'mchnt_order_no' => $trade_no,
-//			'txn_begin_ts' => date('YmdHis', time()), // 交易起始时间
-//			'goods_des' => '白马荟订单', // 商品描述
-//			'term_id' => '88888888', // 终端号,随机 8 字节数字字母组合
-//			'term_ip' => $this->get_real_ip(), //
-//			'notify_url' => $notify_url, // 接收富友异步通知回调地址，通知url必须为直接可访问的url，不能携带参数主扫时必填
-//			'trade_type' => 'JSAPI', // 交易类型 JSAPI--公众号线下支付,LETPAY-小程序,LPXS--小程序线上
-//			'sub_appid' => $this->pay_config['wx_app_id'], // 子商户公众号id sub_appid 填商户或者是服务商的 appid,微信交易为商户的appid（小程序，公众号必填）
-//			'sub_openid' => $wx_open_id, // 子商户用户标识,微信公众号为用户的openid（小程序，公众号，服务窗必填）
-//			// 'sign' => '', // 签名md5(mchnt_cd+"|"+ trade_type +"|"+ order_amt +"|"+ mchnt_order_no+"|"+ txn_begin_ts+"|"+ goods_des +"|"+ term_id +"|"+ term_ip +"|"+ notify_url +"|"+ random_str +"|"+ version + "|"+ mchnt_key)
-
+			'msg_id' => $msg_id,
+			'sign_type' => 'RSA',
+			'timestamp' => date("Y-m-d H:i:s"),
 		);
 
-		$sign_str = 'app_id=' . $params['app_id'] . '&biz_content=' . $params['biz_content'] . '&charset=' . $params['charset'] . '&format=' . $params['format'] . '&msg_id=' . $params['msg_id'] . '&sign_type=' . $params['sign_type'] . '&timestamp=' . $params['timestamp'];
-		$sign = $this->rsa_sign($sign_str);
+		$params = array(
+			"serviceUrl" => $this->icbc_pay_url,
+			"method" => 'POST',
+			"isNeedEncrypt" => false,
+			"biz_content" => $biz_content,
+			"extraParams" => '',
+		);
 
-		$params['sign'] = $sign;
+		$helper = new IcbcClient_helper(
+			$this->icbc_config['appid'],
+			$this->icbc_config['private_key'],
+			IcbcConstants::$SIGN_TYPE_RSA2,
+			'', '',
+			$this->icbc_config['icbc_public_key'],
+			'', '', '', ''
+		);
 
-		log_message('DEBUG', $this->icbc_pay_url);
-		log_message('DEBUG', json_encode($params, JSON_UNESCAPED_UNICODE));
-		$result = Request_helper::icbc_request($this->icbc_pay_url, json_encode($params), 'GET', false, false);
-		log_message('DEBUG', 'prepay request result');
-		log_message('DEBUG', $result);
-
-		$result = json_decode($result, true);
+		$result = $helper->execute($params, $msg_id, '');
 
 		$data = array(
 			'params' => $params,
-			'sign_str' => $sign_str,
+			'sign_str' => '',
 			'result' => $result,
 			'return' => '[]',
 			'code' => 0,
@@ -558,8 +551,7 @@ class Order extends CI_Controller
 		}
 		return $key;
 	}
-
-
+	
 	public function cancel()
 	{
 		$order_number = $this->input->get_post('order_number');
@@ -602,36 +594,77 @@ class Order extends CI_Controller
 		die(json_encode($data, true));
 	}
 
-
-	public function rsa_sign($content, $privateKey = '')
+	// 分佣记录
+	public function commission()
 	{
-		if (empty($private_key)) {
-			$private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo\n-----END PRIVATE KEY-----";
+		$sid = $this->input->get_post('sid');
+
+		// $id = 5803;
+
+		// fetch weixin id
+		$params = array(
+			'method' => 'weixin.sid.decode',
+			'fields' => '*',
+			'sid' => $sid,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if (!isset($result['result']['weixin_id'])) {
+			return Util_helper::result(null, 'error input', -1);
 		}
 
-		openssl_sign($content, $signature, $private_key, OPENSSL_ALGO_SHA256);
-		return base64_encode($signature);
+		$inviter_id = $result['result']['weixin_id'];
+
+		$params = array(
+			'method' => 'orders.commissions.get',
+			'fields' => '*',
+			'inviter_id' => $inviter_id,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if ($result['result']['total_results'] == 0) {
+			$result['result']['rows'] = array();
+		}
+
+		die(json_encode($result));
 	}
 
-	public function rsa_private_encrypt($data, $private_key = '')
+	// 订单支付
+	public function pay()
 	{
-		if (empty($private_key)) {
-			$private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo\n-----END PRIVATE KEY-----";
+		$order_number = $this->input->get_post('order_number');
+		$amount = $this->input->get_post('amount');
+		$payment_method = 'OTHER';
+
+		if (empty($order_number)) {
+			die(json_encode(array('code' => -1, 'msg' => 'error input')));
 		}
 
-		//这个函数可用来判断私钥是否是可用的，可用返回资源id Resource id
-		$pi_key = openssl_pkey_get_private($private_key);
+		$params = array(
+			'method' => 'orders.order.insert',
+			'order_number' => $order_number,
+			'payment_method' => $payment_method,
+			'amount' => $amount,
+		);
 
-		if (empty($pi_key)) {
-			return 'error encrypt';
-		}
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
 
-		//加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
-		openssl_private_encrypt($data, $encrypted, $pi_key);
-		$encrypted = base64_encode($encrypted);
+		$params = array(
+			'method' => 'orders.order.pay',
+			'order_number' => $order_number,
+			'payment_method' => $payment_method,
+			'amount' => $amount,
+		);
 
-		return 'dddcccc';
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
 
-		return $encrypted;
+		die(json_encode($result));
 	}
+
 }

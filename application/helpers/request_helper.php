@@ -83,75 +83,6 @@ class Request_helper
 		return $data;
 	}
 
-	public static function icbc_request($url, $data, $method, $encode = true, $json = true, $proxy_host = '')
-	{
-		$protocol = 'http';
-		if (strpos($url, '://') !== false) {
-			$explode_arr = explode('://', $url);
-			$protocol = $explode_arr[0];
-		}
-		$method = strtoupper($method);
-		$data_fields = '';
-		if ($encode && (is_array($data) || is_object($data))) {
-			$data_fields = http_build_query($data);
-		} else {
-			$data_fields = $data;
-		}
-		if ($method == 'GET' && $encode && $data_fields) {
-			$url .= '?' . $data_fields;
-		}
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $url);
-		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 60);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-
-		if (!empty($proxy_host)) {
-			curl_setopt($curl, CURLOPT_PROXY, $proxy_host);
-		}
-
-//		if ($json) {
-//			curl_setopt($curl, CURLOPT_HTTPHEADER, [
-//				'Content-Type: application/json;charset=UTF-8'
-//			]);
-//		}
-
-		curl_setopt($curl, CURLOPT_HTTPHEADER, [
-			'Content-Type: application/x-www-form-urlencoded;charset=UTF-8'
-		]);
-
-		switch ($method) {
-			case 'GET' :
-				curl_setopt($curl, CURLOPT_HTTPGET, true);
-				break;
-			case 'POST':
-				curl_setopt($curl, CURLOPT_POST, true);
-				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
-				break;
-			case 'PATCH':
-				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PATCH');
-				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
-				break;
-			case 'PUT':
-				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PUT');
-				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
-				break;
-			case 'DELETE':
-				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'DELETE');
-				curl_setopt($curl, CURLOPT_POSTFIELDS, $data_fields);
-				break;
-		}
-
-		if ($protocol == 'https') {
-			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-			curl_setopt($curl, CURLOPT_SSLVERSION, 1);
-		}
-
-		$data = curl_exec($curl);
-		curl_close($curl);
-		return $data;
-	}
-
 
 	/**
 	 * 发起http请求
@@ -319,9 +250,10 @@ class Request_helper
 		return $data;
 	}
 
-	public static function download($url, $file_path, $method = 'GET') {
+	public static function download($url, $file_path, $method = 'GET')
+	{
 		$protocol = 'http';
-		if(strpos($url, '://') !== false) {
+		if (strpos($url, '://') !== false) {
 			$explode_arr = explode('://', $url);
 			$protocol = $explode_arr[0];
 		}
@@ -336,7 +268,7 @@ class Request_helper
 		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 60); // env('HTTP_REQUEST_TIMEOUT', 60)
 //        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
-		switch ($method){
+		switch ($method) {
 			case 'GET' :
 				curl_setopt($curl, CURLOPT_HTTPGET, true);
 				break;
@@ -345,8 +277,7 @@ class Request_helper
 				break;
 		}
 
-		if($protocol == 'https')
-		{
+		if ($protocol == 'https') {
 			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
 			curl_setopt($curl, CURLOPT_SSLVERSION, 1);
@@ -358,38 +289,41 @@ class Request_helper
 		return $data;
 	}
 
-	public static function put_url($url,$header,$data){
+	public static function put_url($url, $header, $data)
+	{
 		$ch = curl_init(); //初始化CURL句柄
 		curl_setopt($ch, CURLOPT_URL, $url); //设置请求的URL
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);//SSL认证。
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER,1); //设为TRUE把curl_exec()结果转化为字串，而不是直接输出
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST,"PUT"); //设置请求方式
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); //设为TRUE把curl_exec()结果转化为字串，而不是直接输出
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT"); //设置请求方式
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);//设置提交的字符串
 		$output = curl_exec($ch);
 		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
-		if($code == 200) return true;
+		if ($code == 200) return true;
 		else return false;
 		//return json_decode($output,true);
 	}
 
-	public static function get_url($url,$header){
+	public static function get_url($url, $header)
+	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch,CURLOPT_HTTPHEADER,$header);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 		$output = curl_exec($ch);
 		curl_close($ch);
-		$obj = simplexml_load_string($output,"SimpleXMLElement", LIBXML_NOCDATA);
-		$output = json_decode(json_encode($obj),true);
+		$obj = simplexml_load_string($output, "SimpleXMLElement", LIBXML_NOCDATA);
+		$output = json_decode(json_encode($obj), true);
 		return $output;
 	}
 
-	public static function post_url($url,$header,$data){
+	public static function post_url($url, $header, $data)
+	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -405,7 +339,8 @@ class Request_helper
 		return $output;
 	}
 
-	public static function del_url($url,$header) {
+	public static function del_url($url, $header)
+	{
 		$ch = curl_init();
 
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -421,7 +356,8 @@ class Request_helper
 		return $output;
 	}
 
-	public static function head_url($url,$header) {
+	public static function head_url($url, $header)
+	{
 		$ch = curl_init();
 
 		curl_setopt($ch, CURLOPT_URL, $url);
