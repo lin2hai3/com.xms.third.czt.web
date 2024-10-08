@@ -194,12 +194,12 @@ class Page extends CI_Controller
 //				'name' => $configs['index_block_5_name'], //'民宿',
 //				'wx_app' => $configs['index_block_5_wx_app'],
 //			),
-			array(
-				'img' => $this->fill_empty($configs['index_block_6_img']),
-				'url' => $this->fill_empty($configs['index_block_6_url']),
-				'name' => $this->fill_empty($configs['index_block_6_name']), //'一票潮州',
-				'wx_app' => $this->fill_empty($configs['index_block_6_wx_app']),
-			),
+//			array(
+//				'img' => $this->fill_empty($configs['index_block_6_img']),
+//				'url' => $this->fill_empty($configs['index_block_6_url']),
+//				'name' => $this->fill_empty($configs['index_block_6_name']), //'一票潮州',
+//				'wx_app' => $this->fill_empty($configs['index_block_6_wx_app']),
+//			),
 //			array(
 //				'img' => $configs['index_block_3_img'],
 //				'url' => $configs['index_block_3_url'],

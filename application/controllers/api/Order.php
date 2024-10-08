@@ -312,11 +312,24 @@ class Order extends CI_Controller
 
 	public function prepay()
 	{
-		return $this->prepay_wxapp();
+		$ticket_id = $this->input->get_post('id');
+
+		$this->load->model('Ticket_model', 'ticket');
+		$db_ticket = $this->ticket->fetch($ticket_id);
+
+
+		if ($db_ticket->pay_channel == 'yipiao') {
+			return $this->prepay_yipiao();
+		} else {
+			return $this->prepay_fuiou();
+		}
+
 	}
 
 	public function prepay_icbc()
 	{
+		return $this->prepay_fuiou();
+
 		$order_amount = $this->input->get_post('amount');
 		$order_number = $this->input->get_post('order_number');
 		$member_id = $this->input->get_post('member_id');
@@ -507,7 +520,7 @@ class Order extends CI_Controller
 		die(json_encode($data, true));
 	}
 
-	public function prepay_wxapp()
+	public function prepay_yipiao()
 	{
 		$order_amount = $this->input->get_post('amount');
 		$order_number = $this->input->get_post('order_number');
@@ -586,8 +599,7 @@ class Order extends CI_Controller
 				'result' => json_decode($result),
 				'return' => array(),
 			);
-		}
-		else {
+		} else {
 			$data = array(
 				'code' => -1,
 				'msg' => 'error',
@@ -758,9 +770,43 @@ class Order extends CI_Controller
 	// 订单支付
 	public function pay()
 	{
+		$sid = $this->input->get_post('sid');
+		$receipt_id = $this->input->get_post('receipt_id');
+
+		// $id = 5803;
+
+		// fetch weixin id
+		$params = array(
+			'method' => 'weixin.sid.decode',
+			'fields' => '*',
+			'sid' => $sid,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if (!isset($result['result']['weixin_id'])) {
+			return Util_helper::result(null, 'error input', -1);
+		}
+
+		$weixin_id = $result['result']['weixin_id'];
+
+
+		$params = array(
+			'method' => 'tickets.receipt.update',
+			'id' => $receipt_id,
+			'status' => 'CONFIRMED',
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		die(json_encode($result));
+
+
 		$order_number = $this->input->get_post('order_number');
 		$amount = $this->input->get_post('amount');
-		$payment_method = 'OTHER';
+		$payment_method = 'CASH';
 
 		if (empty($order_number)) {
 			die(json_encode(array('code' => -1, 'msg' => 'error input')));
@@ -768,6 +814,7 @@ class Order extends CI_Controller
 
 		$params = array(
 			'method' => 'orders.order.insert',
+			'member_id' => $weixin_id,
 			'order_number' => $order_number,
 			'payment_method' => $payment_method,
 			'amount' => $amount,
@@ -776,11 +823,13 @@ class Order extends CI_Controller
 		$result = EtaApp_helper::load($params);
 		$result = json_decode($result, true);
 
+		$order_number = $result['result']['order_number'];
+
 		$params = array(
 			'method' => 'orders.order.pay',
 			'order_number' => $order_number,
 			'payment_method' => $payment_method,
-			'amount' => $amount,
+			'amount' => 0,
 		);
 
 		$result = EtaApp_helper::load($params);

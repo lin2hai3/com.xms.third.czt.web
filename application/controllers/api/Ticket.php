@@ -3,9 +3,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Ticket extends CI_Controller
 {
+	protected $is_debug = false;
 	protected $test_ids = 328;
 
-	// protected $test_ids = '';
+	 protected $share_ticket_ids = array(332);
 
 	protected $default_inventory = 80;
 
@@ -13,6 +14,7 @@ class Ticket extends CI_Controller
 	{
 		$page = $this->input->get_post('page');
 		$keyword = $this->input->get_post('keyword');
+		$is_published = $this->input->get_post('is_published');
 		$pagination = Util_helper::getPagination($page);
 
 		$params = array();
@@ -22,6 +24,10 @@ class Ticket extends CI_Controller
 		$params['page_size'] = $pagination->limit;
 		$params['keyword'] = $keyword;
 		$params['orderby'] = 'id DESC';
+
+		if (!empty($is_published)) {
+			$params['is_published'] = $is_published;
+		}
 
 		$result = EtaApp_helper::load($params);
 		$result = json_decode($result, true);
@@ -43,11 +49,12 @@ class Ticket extends CI_Controller
 		$params['method'] = 'tickets.tickets.get';
 		$params['fields'] = '*';
 		$params['page'] = $page;
+		$params['is_published'] = 1;
 		$params['page_size'] = $pagination->limit;
 		$params['keyword'] = $keyword;
 		$params['orderby'] = 'id DESC';
 
-		if (!empty($this->test_ids)) {
+		if ($this->is_debug) {
 			$params['ids'] = $this->test_ids;
 		}
 
@@ -64,6 +71,7 @@ class Ticket extends CI_Controller
 	public function show()
 	{
 		$id = $this->input->get_post('id');
+		$sid = $this->input->get_post('sid');
 		$show_full = $this->input->get_post('show_full');
 
 		if (empty($show_full)) {
@@ -83,9 +91,15 @@ class Ticket extends CI_Controller
 
 
 		$result['result']['show_share'] = false;
-		if (in_array($id, array(332))) {
+		if (in_array($id, $this->share_ticket_ids)) {
 			$result['result']['show_share'] = true;
 		}
+
+
+		$this->load->model('Ticket_model', 'ticket');
+		$db_ticket = $this->ticket->fetch($id);
+		$result['result']['pay_channel'] = $db_ticket->pay_channel;
+
 
 		$extend = '';
 		if (isset($result['result']['extend'])) {
@@ -322,6 +336,43 @@ class Ticket extends CI_Controller
 		$result = EtaApp_helper::load($params);
 		$result = json_decode($result, true);
 
+		die(json_encode($result));
+	}
+
+	public function update_ticket()
+	{
+		$sid = $this->input->get_post('sid');
+
+		// $id = 5803;
+
+		// fetch weixin id
+		$params = array(
+			'method' => 'weixin.sid.decode',
+			'fields' => '*',
+			'sid' => $sid,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if (!isset($result['result']['weixin_id'])) {
+			return Util_helper::result(null, 'error input', -1);
+		}
+
+		$weixin_id = $result['result']['weixin_id'];
+
+		$id = $this->input->get_post('id');
+		$pay_channel = $this->input->get_post('pay_channel');
+
+		if (empty($id) || empty($pay_channel)) {
+			$result = array('code' => -1, 'msg' => 'error input');
+			die(json_encode($result));
+		}
+
+		$this->load->model('Ticket_model', 'ticket');
+		$db_ticket = $this->ticket->setPayChannel($id, $pay_channel, $weixin_id);
+
+		$result = array('code' => 0, 'msg' => 'success');
 		die(json_encode($result));
 	}
 

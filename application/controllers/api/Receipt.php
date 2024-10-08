@@ -99,6 +99,8 @@ class Receipt extends CI_Controller
 		$data = array();
 		$data['method'] = 'tickets.receipt.insert';
 
+		$remark = '场次：' . $stime . '至' . $etime . ' ' . $remark;
+
 		$data['ticket_id'] = $ticket_id;
 		$data['member_id'] = $member_id;
 		$data['stime'] = $stime;
@@ -155,5 +157,61 @@ class Receipt extends CI_Controller
 		$result = json_decode($result, true);
 
 		die(json_encode($result));
+	}
+
+	public function auto_confirm()
+	{
+		show_404();
+
+		$page = $this->input->get_post('page');
+		if (empty($page)) {
+			$page = 1;
+		}
+
+		$page = 3;
+		$pagination = Util_helper::getPagination($page, 200);
+
+		$params = array();
+		$params['method'] = 'tickets.receipts.get';
+		$params['fields'] = '*';
+		$params['status'] = 'CONFIRMED';
+		$params['keyword'] = '英歌舞体验馆预约';
+		$params['page'] = $page;
+		$params['page_size'] = $pagination->limit;
+		$params['orderby'] = 'id DESC';
+
+		$result = EtaApp_helper::load($params);
+		// die($result);
+		$result = json_decode($result, true);
+		echo $result['result']['total_results'] . '<br/>';
+
+		$total_count = 0;
+		$total_amount = 0;
+		$do_count = 0;
+
+		foreach ($result['result']['rows'] as &$row) {
+			echo $row['id'] . '#' . $row['ticket_id'] . $row['status'] . '<br/>';
+
+			$total_count++;
+			$total_amount += $row['amount'];
+
+			if ($row['ticket_id'] == 332 && $row['status'] == 'CONFIRMED') {
+				$params = array(
+					'method' => 'tickets.receipt.update',
+					'id' => $row['id'],
+					'status' => 'USED',
+				);
+
+				$update_result = EtaApp_helper::load($params);
+
+				$do_count++;
+			}
+		}
+
+		echo '合计：单数：' . $total_count . '<br/>';
+		echo '合计：金额：' . $total_amount . '<br/>';
+		echo '核销：单数：' . $do_count . '<br/>';
+
+		unset($row);
 	}
 }
