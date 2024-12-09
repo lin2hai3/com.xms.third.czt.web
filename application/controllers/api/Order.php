@@ -29,17 +29,17 @@ class Order extends CI_Controller
 
 	public $icbc_config = array(
 		'appid' => '11000000000000019425',
-		// 'mer_id' => '200408010122',
-		// 'mer_prtcl_no' => '2004080101220201',
-		// 'shop_appid' => 'wxa9dd96c791e01f15',
+		'mer_id' => '200408010122',
+		'mer_prtcl_no' => '2004080101220201',
+		'shop_appid' => 'wxa9dd96c791e01f15',
 
 		'icbc_appid' => '11000000000000019425',
 		'private_key' => "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClT6URB1MYWnpFVKb75mdG9TnTMjR9EIrulftM+5dx2kQ9arph7I11SMruQOIMWIQRmWBBpvSFfeCuBL4UX7dl02V3/8on99oT/pUQoe/9C43vWp/fu3NeVPsoCtThPxw2adMLs2cTNFEnkxvp5ZShj+RfigODgj8rPqdt9IHt7KTR0H1TY9vRlp4pDtJtXZeYHWqUIz0CQCY/cx3LeBh92Bk/n7X1XZ5dEImDctT8MjY+QvWBgRmjX9A76580Er66q1hTnlkcGJplyr2N6kTIypkrjV223ojuxbGq9+4U4kbDZBn8MR4KsRQS2s2hRitigMZSW/WZCsdZ61tHuqeTAgMBAAECggEAMifUATKjt4PcDST99PeW5iSJAtb8reVTAchnkpfS/ywmACxdmFBZKviG+XqeGvjQOTa7ya+KCOaEQMgXk77mufJFmv70quO8OszHFWDMm43h5nksgIkzG6/U8/U1WZH4UVoSOj6YS29YIBW2JmUNj2dE9ue84S2nVMuRqP7CXRktEbOSNaJQ/1bfDstkTQLq3KtMey87B11Fzq5rJl1aTPclGSmcLlxzNR8fzbHtw+byssUDiibkRY9LrfqQzgCAMg2Dkv1QFxvuLz0tWaoSBjX/wZnm3bL6Po2K3EbCmRMl28mDhMU4pFsmzDrabzASsJNsqEqGuHcnCCFOak8BAQKBgQDxClXYOF1czvEnud4rh3kZn2uDRBd+V+L605nP73l/ZFApcemLwkof4Ed/tX2t9SYreve2Fen7vBZO6dbcfTP+i9uFnUprv/vdH4SRU/U5hpC74dIVEPK+Nt3IiDUBglGsRN2fW6vO1jTPrl0fyagoFEezUzo09cuMQGZd+tybYQKBgQCvkh5B51Bc5ZpO3KUM9paTgNRkk7gH6iq8wE3FRlU11Pe2vTJ3I5Ehdefs9GekGCKrATL2TYkGxlViqZmXZYlwyl4KoiEBv3P2I8c4jKvrevovy0frsrhyylhdmjevptU2puiKnRy/tZhldnFWKkq3IXGAOp+Tltz6UtVLbcG7cwKBgQDEA+Khjdymr4c/BhCdF3Msmg8FVWdBkFj+HvuzNAx6w2nI+mCxDdPXrjyWp1HIGFbs/vfYdGOuGluN2u2mqo6Qzs07EBlIHHzGam4U/NCr8jlbAJ4mEX1FoDqla9anHoIqdGpBwHusHVgfF62VPxlnVm6kbucj0EqyCGD2xh2GoQKBgD7+NDD9J45NKxJEhEukZd5CiPIVNiBQ2kiizsSLOaN45+/+7g5lCntw7GfOQSlVJ4sngPtyUknF+3jM1TjGy4tWcGtsRF92K8sShzY48q4oj396djGRDDDTfOUIohY5y6IyPJkPSfNW2nj9CCkcP3Z5X1ncrsirhlmiQrkvhiUVAoGBAMdXwszUYwobQRNi2cRoZGVptd3VN1xvFzv0efxzPJT7TuoppyF5VniHbNTmgO/SQGoCEZROecCHDqJJjVf2+V44O/y2gJ7qyiulH5q0CNnO1jEyk1vtrOkpg22KL0/HBfXWotONWzIOodVq3XcUgoeTdEYBhkZIjKRA6+4eO7qo",
 		'icbc_public_key' => "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIpiPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZERkx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4+EBpXo8gNiAFsNwIDAQAB",
 
-		'mer_id' => '200408010110',
-		'mer_prtcl_no' => '2004080101100201',
-		'shop_appid' => 'wxf207735ea23c7cb5',
+//		'mer_id' => '200408010110',
+//		'mer_prtcl_no' => '2004080101100201',
+//		'shop_appid' => 'wxf207735ea23c7cb5',
 	);
 
 	public $wxapp_config = array(
@@ -288,10 +288,12 @@ class Order extends CI_Controller
 
 		$rules = $this->get_ticket_rules($ticket_id);
 
+		log_message('error', json_encode($rules));
+
 		$can_add_receipt = false;
 		if (isset($rules[$date])) {
 			if (isset($rules[$date]['items'][$timerange])) {
-				if ($rules[$date]['items'][$timerange]['inventory'] > $qty) {
+				if ($rules[$date]['items'][$timerange]['inventory'] >= $qty) {
 					$can_add_receipt = true;
 				}
 			}
@@ -317,6 +319,7 @@ class Order extends CI_Controller
 		$this->load->model('Ticket_model', 'ticket');
 		$db_ticket = $this->ticket->fetch($ticket_id);
 
+		return $this->prepay_icbc();
 
 		if ($db_ticket->pay_channel == 'yipiao') {
 			return $this->prepay_yipiao();
@@ -328,7 +331,7 @@ class Order extends CI_Controller
 
 	public function prepay_icbc()
 	{
-		return $this->prepay_fuiou();
+		// return $this->prepay_fuiou();
 
 		$order_amount = $this->input->get_post('amount');
 		$order_number = $this->input->get_post('order_number');
@@ -418,6 +421,8 @@ class Order extends CI_Controller
 		);
 
 		$result = $helper->execute($params, $msg_id, '');
+
+		// die($result);
 
 		$result = json_decode($result, true);
 		$prepay_result = json_decode($result['wx_data_package'], true);
@@ -954,5 +959,57 @@ class Order extends CI_Controller
 		}
 
 		return $random_str;
+	}
+
+
+	public function syncOrderPayResult()
+	{
+		$this->load->model('EtaPayLog_model', 'pay_log');
+		$rows = $this->pay_log->get_by_type('WXAPP');
+
+		echo '合计' . count($rows) . '条<hr>';
+
+		echo '<style>table { border-collapse: collapse; width: 100%; } table, th, td { border: 1px solid black; }</style>';
+
+		echo '<table>';
+		echo '<tr>';
+		echo '<td>单号</td>';
+		echo '<td>金额</td>';
+		echo '<td>状态</td>';
+		echo '<td>数量</td>';
+		echo '<td>日期</td>';
+		echo '<td>场次</td>';
+		echo '</tr>';
+
+		foreach ($rows as $row) {
+
+			$params = array();
+			$params['method'] = 'tickets.receipt.get';
+			$params['fields'] = '*';
+			$params['id'] = $row['order_sn'];
+
+			$result = EtaApp_helper::load($params);
+			// echo $result;
+			$result = json_decode($result, true);
+
+			echo '<tr>';
+
+			if ($result['result']['status'] == 'USED' || $result['result']['status'] == 'CONFIRMED') {
+				// $result['result']['indate'] . '&nbsp;' .
+				// $result['result']['etime'] . '&nbsp;' .
+				echo '<td>' . $row['trade_no'] . '</td>';
+				echo '<td>' . $row['amount'] . '</td>';
+				// echo '<td>' . $result['result']['status'] . '</td>';
+				echo '<td>' . 'USED' . '</td>';
+				echo '<td>' . $result['result']['qty'] . '</td>';
+				echo '<td>' . $result['result']['stime'] . '</td>';
+				echo '<td>' . $result['result']['timerange'] . '</td>';
+			}
+
+			echo '</tr>';
+		}
+
+		echo '</table>';
+
 	}
 }

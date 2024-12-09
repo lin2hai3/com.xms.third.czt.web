@@ -5,8 +5,9 @@ class Ticket extends CI_Controller
 {
 	protected $is_debug = false;
 	protected $test_ids = 328;
+	protected $hidden_ids = array(334);
 
-	 protected $share_ticket_ids = array(332);
+	 protected $share_ticket_ids = array(332, 334);
 
 	protected $default_inventory = 80;
 
@@ -15,6 +16,7 @@ class Ticket extends CI_Controller
 		$page = $this->input->get_post('page');
 		$keyword = $this->input->get_post('keyword');
 		$is_published = $this->input->get_post('is_published');
+		$is_published = 1;
 		$pagination = Util_helper::getPagination($page);
 
 		$params = array();
@@ -23,7 +25,8 @@ class Ticket extends CI_Controller
 		$params['page'] = $page;
 		$params['page_size'] = $pagination->limit;
 		$params['keyword'] = $keyword;
-		$params['orderby'] = 'id DESC';
+		// $params['orderby'] = 'id DESC';
+		$params['orderby'] = 'ontop DESC';
 
 		if (!empty($is_published)) {
 			$params['is_published'] = $is_published;
@@ -45,11 +48,16 @@ class Ticket extends CI_Controller
 		$keyword = $this->input->get_post('keyword');
 		$pagination = Util_helper::getPagination($page);
 
+		if (empty($page)) {
+			$page = 1;
+		}
+
 		$params = array();
 		$params['method'] = 'tickets.tickets.get';
 		$params['fields'] = '*';
 		$params['page'] = $page;
 		$params['is_published'] = 1;
+		$params['is_ontop'] = 1;
 		$params['page_size'] = $pagination->limit;
 		$params['keyword'] = $keyword;
 		$params['orderby'] = 'id DESC';
@@ -64,6 +72,16 @@ class Ticket extends CI_Controller
 		$pagination = Util_helper::getPagination($page);
 		$pagination->setCount($result['result']['total_results']);
 		$result['result']['pagination'] = $pagination;
+
+		foreach ($result['result']['rows'] as $key => &$row) {
+			if (in_array($row['id'], $this->hidden_ids)) {
+				unset($result['result']['rows'][$key]);
+			}
+		}
+
+		unset($row);
+
+		$result['result']['rows'] = array_values($result['result']['rows']);
 
 		return Util_helper::result($result['result']);
 	}
@@ -436,7 +454,7 @@ class Ticket extends CI_Controller
 	public function fetch_ticket_qrcode()
 	{
 		$url = $this->input->get_post('url');
-		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+//		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
 		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_2.jpg';
 //		$bg_img = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
 

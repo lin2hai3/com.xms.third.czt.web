@@ -99,6 +99,8 @@ class Receipt extends CI_Controller
 		$data = array();
 		$data['method'] = 'tickets.receipt.insert';
 
+		$stime = date('Y-m-d H:i', strtotime($stime));
+		$etime = date('Y-m-d H:i', strtotime($etime));
 		$remark = '场次：' . $stime . '至' . $etime . ' ' . $remark;
 
 		$data['ticket_id'] = $ticket_id;
@@ -119,12 +121,22 @@ class Receipt extends CI_Controller
 	{
 		$receipt_id = $this->input->get_post('receipt_id');
 		$admin_id = $this->input->get_post('admin_id');
+		$shop_id = $this->input->get_post('shop_id');
+
+		if (empty($receipt_id) || empty($admin_id)) {
+			return Util_helper::result(null, 'error', -1);
+		}
+
+		// ticket_id = 332, shop_id = 458
+		// $shop_id = '458';
 
 		$params = array(
 			'method' => 'tickets.receipt.apply',
 			'receipt_id' => $receipt_id,
 			'admin_id' => $admin_id,
 			'stime_offset' => 15 * 60, // 提前入场时间量（单位：秒）
+			'force' => 1,
+			'shop_id' => $shop_id,
 		);
 
 		$apply_result = EtaApp_helper::load($params);

@@ -21,6 +21,12 @@ class EtaPayLog_model extends CI_Model
 		return $result;
 	}
 
+	public function get_by_type($type)
+	{
+		$this->db->where('payment_type', $type);
+		return $this->db->get('eta_pay_log')->result_array();
+	}
+
 	public function get($no)
 	{
 		$this->db->where('trade_no', $no);
