@@ -133,9 +133,9 @@ class Ticket extends CI_Controller
 		$rules = array();
 
 		foreach ($rows as $row) {
-			if ($this->start_with($row, 'default:')) {
+			if ($this->start_with($row, 'default#')) {
 				$type = 1;
-				$time_span = str_replace('default:', '', $row);
+				$time_span = str_replace('default#', '', $row);
 				$date = 'default';
 			} elseif ($this->start_with_week($row)) {
 				$type = 2;
@@ -192,6 +192,10 @@ class Ticket extends CI_Controller
 			// $time_spans = $default_rule;
 			$time_spans = '';
 
+			if (!empty($default_rule)) {
+				$time_spans = $default_rule;
+			}
+
 			if (isset($week_rules[$week])) {
 				$time_spans = $week_rules[$week];
 			}
@@ -238,8 +242,17 @@ class Ticket extends CI_Controller
 
 				$inventory = $item['inventory'] - $count_result['result']['count'];
 
+				// 过期都显示卖完
+				if (strtotime($end_time) < time()) {
+					$inventory = 0;
+				}
+
 				$item['inventory'] = $inventory;
 				$item['sale_count'] = $count_result['result']['count'];
+
+				$item['_start_time'] = $start_time;
+				$item['_end_time'] = $end_time;
+				$item['_sale_count'] = $count_result['result']['count'];
 			}
 
 			unset($item);
@@ -250,7 +263,61 @@ class Ticket extends CI_Controller
 
 		$result['result']['rules'] = $_rules;
 
+
+		$result['result']['skus'] = $this->get_skus($id);
+
 		die(json_encode($result));
+	}
+
+	public function get_skus($id)
+	{
+		$skus = array();
+
+		if ($id == 332) {
+			$skus['100001'] = array(
+				'code' => '100001',
+				'name' => '成人票',
+				'rate' => 1,
+				'count' => 1,
+				'discount' => 1,
+ 			);
+
+			$skus['100002'] = array(
+				'code' => '100002',
+				'name' => '老人儿童半价票',
+				'rate' => 0.5,
+				'count' => 1,
+				'discount' => 0.5,
+ 			);
+
+			$skus['100003'] = array(
+				'code' => '100003',
+				'name' => '一大一小/一大一老',
+				'rate' => 1.5,
+				'count' => 2,
+				'discount' => 0.75,
+			);
+
+			$skus['100004'] = array(
+				'code' => '100004',
+				'name' => '三人团票',
+				'rate' => 3,
+				'count' => 3,
+				'discount' => 1,
+			);
+
+			$skus['100005'] = array(
+				'code' => '100005',
+				'name' => '五人团票',
+				'rate' => 5,
+				'count' => 5,
+				'discount' => 1,
+			);
+		}
+
+		$skus = array_values($skus);
+
+		return $skus;
 	}
 
 	public function update_extend()
@@ -299,9 +366,9 @@ class Ticket extends CI_Controller
 		$db_rules = array();
 
 		foreach ($rows as $row) {
-			if ($this->start_with($row, 'default:')) {
+			if ($this->start_with($row, 'default#')) {
 				$type = 1;
-				$time_span = str_replace('default:', '', $row);
+				$time_span = str_replace('default#', '', $row);
 				$date = 'default';
 			} elseif ($this->start_with_week($row)) {
 				$type = 2;
@@ -342,7 +409,7 @@ class Ticket extends CI_Controller
 
 		$db_rules1 = array();
 		foreach ($db_rules as $date => $db_rule) {
-			$db_rules1[] = $date . ':' . $db_rule;
+			$db_rules1[] = $date . '#' . $db_rule;
 		}
 
 		$new_extend = implode("\n", $db_rules1);

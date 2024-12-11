@@ -56,6 +56,7 @@ class Receipt extends CI_Controller
 		$remark = $this->input->get_post('remark');
 		$comment = $this->input->get_post('comment');
 		$qty = $this->input->get_post('qty');
+		$sku_name = $this->input->get_post('sku_name');
 
 		$ticket_id = intval($ticket_id);
 
@@ -101,7 +102,12 @@ class Receipt extends CI_Controller
 
 		$stime = date('Y-m-d H:i', strtotime($stime));
 		$etime = date('Y-m-d H:i', strtotime($etime));
-		$remark = '场次：' . $stime . '至' . $etime . ' ' . $remark;
+
+		if (!empty($sku_name)) {
+			$sku_name = $sku_name . '; ';
+		}
+
+		$remark = $sku_name . '场次：' . $stime . '至' . $etime . ' ' . $remark;
 
 		$data['ticket_id'] = $ticket_id;
 		$data['member_id'] = $member_id;
