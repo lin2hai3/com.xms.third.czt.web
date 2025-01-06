@@ -91,9 +91,9 @@ class Order extends CI_Controller
 		$rules = array();
 
 		foreach ($rows as $row) {
-			if ($this->start_with($row, 'default:')) {
+			if ($this->start_with($row, 'default#')) {
 				$type = 1;
-				$time_span = str_replace('default:', '', $row);
+				$time_span = str_replace('default#', '', $row);
 				$date = 'default';
 			} elseif ($this->start_with_week($row)) {
 				$type = 2;
@@ -149,6 +149,10 @@ class Order extends CI_Controller
 
 			// $time_spans = $default_rule;
 			$time_spans = '';
+
+			if (!empty($default_rule)) {
+				$time_spans = $default_rule;
+			}
 
 			if (isset($week_rules[$week])) {
 				$time_spans = $week_rules[$week];
@@ -283,6 +287,7 @@ class Order extends CI_Controller
 
 		$result = json_decode($result, true);
 
+		$result['ticket_id'] = $ticket_id;
 		$result['stime'] = $start_time;
 		$result['etime'] = $end_time;
 
@@ -319,7 +324,7 @@ class Order extends CI_Controller
 		$this->load->model('Ticket_model', 'ticket');
 		$db_ticket = $this->ticket->fetch($ticket_id);
 
-		return $this->prepay_icbc();
+		// return $this->prepay_icbc();
 
 		if ($db_ticket->pay_channel == 'yipiao') {
 			return $this->prepay_yipiao();
@@ -994,6 +999,9 @@ class Order extends CI_Controller
 
 			echo '<tr>';
 
+			$timerange = isset($result['result']['timerange']) ? $result['result']['timerange'] : '';
+			$remark = isset($result['result']['remark']) ? $result['result']['remark'] : '';
+
 			if ($result['result']['status'] == 'USED' || $result['result']['status'] == 'CONFIRMED') {
 				// $result['result']['indate'] . '&nbsp;' .
 				// $result['result']['etime'] . '&nbsp;' .
@@ -1003,7 +1011,7 @@ class Order extends CI_Controller
 				echo '<td>' . 'USED' . '</td>';
 				echo '<td>' . $result['result']['qty'] . '</td>';
 				echo '<td>' . $result['result']['stime'] . '</td>';
-				echo '<td>' . $result['result']['timerange'] . '</td>';
+				echo '<td>' . $remark . '</td>';
 			}
 
 			echo '</tr>';
@@ -1011,5 +1019,101 @@ class Order extends CI_Controller
 
 		echo '</table>';
 
+	}
+
+
+	public function agent_index()
+	{
+		$rows = array(
+			array('flag' => 'A', 'member_id' => 1001, 'ticket_id' => 332, 'count' => ''),
+			// array('member_id' => 1002, 'ticket_id' => 332, 'count' => ''),
+			// array('member_id' => 2840, 'ticket_id' => 332, 'count' => ''),
+		);
+
+		foreach ($rows as &$row) {
+			$data = array();
+			$data['method'] = 'tickets.receipts.inviter.get';
+			$data['fields'] = '*';
+			$data['ticket_id'] = $row['ticket_id'];
+			$data['inviter_id'] = $row['member_id'];
+
+			$result = EtaApp_helper::load($data);
+			$result = json_decode($result, true);
+
+			$row['count'] = $result['result']['total_results'];
+		}
+
+		$pagination = array(
+			'page' => 1,
+			'pages' => 1,
+		);
+
+		$result = array(
+			'return_code' => 10000,
+			'return_msg' => 'success',
+			'data' => array(
+				'rows' => $rows,
+				'pagination' => $pagination,
+			)
+		);
+
+		die(json_encode($result));
+	}
+
+	public function agent_show()
+	{
+		$ticket_id = $this->input->get_post('ticket_id');
+		$inviter_id = $this->input->get_post('inviter_id');
+		$page = $this->input->get_post('page');
+
+		$page = intval($page);
+
+		if (empty($page)) {
+			$page = 1;
+		}
+
+		$page_size = 20;
+
+		$data = array();
+		$data['method'] = 'tickets.receipts.inviter.get';
+		$data['fields'] = '*';
+		$data['page'] = $page;
+		$data['page_size'] = $page_size;
+		$data['ticket_id'] = $ticket_id;
+		$data['inviter_id'] = $inviter_id;
+		$data['status'] = 'USED';
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+
+		$pagination = array(
+			'page' => $page,
+		);
+
+		$pagination['count'] = $result['result']['total_results'];
+		$pagination['pages'] = ceil($result['result']['total_results'] / $page_size);
+
+		$result = array(
+			'return_code' => 10000,
+			'return_msg' => 'success',
+			'data' => $result['result']
+		);
+
+		$result['data']['pagination'] = $pagination;
+
+		die(json_encode($result));
+	}
+
+	public function member_search()
+	{
+		$data = array();
+		$data['method'] = 'members.member.search';
+		$data['fields'] = '*';
+		$data['keyword'] = 'A';
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+
+		die(json_encode($result));
 	}
 }

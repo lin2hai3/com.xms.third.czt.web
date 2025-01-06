@@ -57,8 +57,11 @@ class Receipt extends CI_Controller
 		$comment = $this->input->get_post('comment');
 		$qty = $this->input->get_post('qty');
 		$sku_name = $this->input->get_post('sku_name');
+		$discount = $this->input->get_post('discount');
+		$inviter_id = $this->input->get_post('inviter_id');
 
 		$ticket_id = intval($ticket_id);
+		$inviter_id = intval($inviter_id);
 
 		if (empty($ticket_id)) {
 			die(json_encode(array('code' => -1, 'msg' => 'error input')));
@@ -117,10 +120,14 @@ class Receipt extends CI_Controller
 		$data['remark'] = $remark;
 		$data['comment'] = $comment;
 		$data['qty'] = $qty;
+		$data['discount'] = $discount * 100;
+		$data['inviter_id'] = $inviter_id;
 
 		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$result['input'] = $data;
 
-		die(json_encode(json_decode($result, true), JSON_UNESCAPED_UNICODE));
+		die(json_encode($result, JSON_UNESCAPED_UNICODE));
 	}
 
 	public function apply()

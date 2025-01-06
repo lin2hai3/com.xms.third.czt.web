@@ -7,7 +7,7 @@ class Ticket extends CI_Controller
 	protected $test_ids = 328;
 	protected $hidden_ids = array(334);
 
-	 protected $share_ticket_ids = array(332, 334);
+	protected $share_ticket_ids = array(332, 334);
 
 	protected $default_inventory = 80;
 
@@ -228,6 +228,9 @@ class Ticket extends CI_Controller
 				$start_time = $date . ' ' . $time_items[0];
 				$end_time = $date . ' ' . $time_items[1];
 
+				$start_time = date('Y-m-d H:i', strtotime($start_time));
+				$end_time = date('Y-m-d H:i', strtotime($end_time));
+
 				$data = array();
 				$data['method'] = 'tickets.receipts.count.get';
 				$data['fields'] = '*';
@@ -241,6 +244,10 @@ class Ticket extends CI_Controller
 				$count_result = json_decode($count_result, true);
 
 				$inventory = $item['inventory'] - $count_result['result']['count'];
+
+				if ($inventory < 0) {
+					$inventory = 0;
+				}
 
 				// 过期都显示卖完
 				if (strtotime($end_time) < time()) {
@@ -273,14 +280,14 @@ class Ticket extends CI_Controller
 	{
 		$skus = array();
 
-		if ($id == 332) {
+		if ($id == 332 || $id == 333) {
 			$skus['100001'] = array(
 				'code' => '100001',
 				'name' => '成人票',
 				'rate' => 1,
 				'count' => 1,
 				'discount' => 1,
- 			);
+			);
 
 			$skus['100002'] = array(
 				'code' => '100002',
@@ -288,7 +295,7 @@ class Ticket extends CI_Controller
 				'rate' => 0.5,
 				'count' => 1,
 				'discount' => 0.5,
- 			);
+			);
 
 			$skus['100003'] = array(
 				'code' => '100003',
@@ -521,9 +528,49 @@ class Ticket extends CI_Controller
 	public function fetch_ticket_qrcode()
 	{
 		$url = $this->input->get_post('url');
+		$sid = $this->input->get_post('sid');
 //		$url = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
 		$bg_img = 'https://linhai.666os.com/assets/images/czt_ygw_2.jpg';
 //		$bg_img = 'https://etu.666os.com/wxacode/agents/2840_TIC_332.png';
+
+		if (empty($sid)) {
+			$sid = str_replace('https://etu.666os.com/wxacode/agents/', '', $url);
+			$sid = str_replace('_TIC_332.png', '', $sid);
+		}
+
+		// fetch weixin id
+		$data = array();
+		$data['method'] = 'weixin.sid.decode';
+		$data['fields'] = '*';
+		$data['sid'] = $sid;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$weixin_id = $result['result']['weixin_id'];
+
+		// fetch member_id
+		$data = array();
+		$data['method'] = 'weixin.member.id.get';
+		$data['fields'] = '*';
+		$data['weixin_id'] = $weixin_id;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$member_id = $result['result']['member_id'];
+
+		// fetch member
+		$data = array();
+		$data['method'] = 'members.member.get';
+		$data['fields'] = '*';
+		$data['id'] = $member_id;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$flag = $result['result']['flag'] . substr($result['result']['mobile'], -4);
+
+
+
+
 
 		list($bg_width, $bg_height) = getimagesize($bg_img);
 		list($url_width, $url_height) = getimagesize($url);
@@ -561,6 +608,9 @@ class Ticket extends CI_Controller
 		$text = "府城英歌舞体验馆欢迎您";
 		$color = imagecolorallocatealpha($dst_image, 0, 0, 0, 0);
 		imagefttext($dst_image, 30, 0, 125, $bg_height + $new_height / 2 + 40, $color, $font, $text);
+
+		// imagefttext($dst_image, 24, 0, 550, 60, $color, $font, $flag); // 整个手机号码的位置
+		imagefttext($dst_image, 24, 0, 650, 60, $color, $font, $flag); // 手机号后四位的位置
 
 		// 保存拼接后的图像
 		$file_name = time() . '.png';
