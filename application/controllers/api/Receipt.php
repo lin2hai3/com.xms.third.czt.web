@@ -58,10 +58,10 @@ class Receipt extends CI_Controller
 		$qty = $this->input->get_post('qty');
 		$sku_name = $this->input->get_post('sku_name');
 		$discount = $this->input->get_post('discount');
-		$inviter_id = $this->input->get_post('inviter_id');
+		$inviter_sid = $this->input->get_post('inviter_id');
 
 		$ticket_id = intval($ticket_id);
-		$inviter_id = intval($inviter_id);
+		// $inviter_sid = intval($inviter_sid);
 
 		if (empty($ticket_id)) {
 			die(json_encode(array('code' => -1, 'msg' => 'error input')));
@@ -100,6 +100,39 @@ class Receipt extends CI_Controller
 		$result = json_decode($result, true);
 		$member_id = $result['result']['member_id'];
 
+
+		// fetch weixin id
+		$data = array();
+		$data['method'] = 'weixin.sid.decode';
+		$data['fields'] = '*';
+		$data['sid'] = $inviter_sid;
+
+		$result = EtaApp_helper::load($data);
+		log_message('error', '$inviter_sid#' . $inviter_sid);
+		log_message('error', $result);
+		$result = json_decode($result, true);
+
+		$inviter_weixin_id = 0;
+		$inviter_member_id = 0;
+
+		if (isset($result['result']) && isset($result['result']['weixin_id'])) {
+			$inviter_weixin_id = $result['result']['weixin_id'];
+
+			// fetch member_id
+			$data = array();
+			$data['method'] = 'weixin.member.id.get';
+			$data['fields'] = '*';
+			$data['weixin_id'] = $inviter_weixin_id;
+
+			$result = EtaApp_helper::load($data);
+			$result = json_decode($result, true);
+
+
+			if (isset($result['result'])) {
+				$inviter_member_id = $result['result']['member_id'];
+			}
+		}
+
 		$data = array();
 		$data['method'] = 'tickets.receipt.insert';
 
@@ -121,7 +154,7 @@ class Receipt extends CI_Controller
 		$data['comment'] = $comment;
 		$data['qty'] = $qty;
 		$data['discount'] = $discount * 100;
-		$data['inviter_id'] = $inviter_id;
+		$data['inviter_id'] = $inviter_member_id;
 
 		$result = EtaApp_helper::load($data);
 		$result = json_decode($result, true);
@@ -239,4 +272,35 @@ class Receipt extends CI_Controller
 
 		unset($row);
 	}
+
+	public function test()
+	{
+
+		$inviter_sid = '2MbmWNmO';
+
+		// fetch weixin id
+		$data = array();
+		$data['method'] = 'weixin.sid.decode';
+		$data['fields'] = '*';
+		$data['sid'] = $inviter_sid;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$inviter_weixin_id = $result['result']['weixin_id'];
+
+		// fetch member_id
+		$data = array();
+		$data['method'] = 'weixin.member.id.get';
+		$data['fields'] = '*';
+		$data['weixin_id'] = $inviter_weixin_id;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+		$inviter_member_id = $result['result']['member_id'];
+
+		die($inviter_member_id);
+	}
+
+
+
 }

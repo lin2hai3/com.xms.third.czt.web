@@ -1021,56 +1021,148 @@ class Order extends CI_Controller
 
 	}
 
+	public function get_ticket_price($ticket_id)
+	{
+		return 98;
+	}
+
+	public function agent_flag()
+	{
+		$rows = array(
+			array('code' => 'T', 'name' => 'T'),
+			array('code' => 'D', 'name' => 'D'),
+			array('code' => 'K', 'name' => 'K'),
+			array('code' => 'Y', 'name' => 'Y'),
+		);
+
+		return Util_helper::result(array('rows' => $rows));
+	}
 
 	public function agent_index()
 	{
+		$v = $this->input->get_post('v');
+		$flag = $this->input->get_post('flag');
+		$page = $this->input->get_post('page');
+		$keyword = $this->input->get_post('keyword');
+		$page_size = 20;
+
 		$rows = array(
 			array('flag' => 'A', 'member_id' => 1001, 'ticket_id' => 332, 'count' => ''),
 			// array('member_id' => 1002, 'ticket_id' => 332, 'count' => ''),
-			// array('member_id' => 2840, 'ticket_id' => 332, 'count' => ''),
+			array('flag' => 'C', 'member_id' => 2840, 'ticket_id' => 332, 'count' => ''),
 		);
 
-		foreach ($rows as &$row) {
+//		$flags = ['A', 'T'];
+//		foreach ($flags as $flag) {
+//		}
+
+		if (empty($flag)) {
+			$flag = 'T';
+		}
+
+		$members = array();
+
+		$data = array();
+		$data['method'] = 'members.members.get';
+		$data['page_size'] = $page_size;
+		$data['keyword'] = $keyword;
+		$data['fields'] = '*';
+		$data['flag'] = $flag;
+
+		$result = EtaApp_helper::load($data);
+		$result = json_decode($result, true);
+
+		$pagination = array(
+			'page' => $page,
+			'pages' => ceil($result['result']['total_results'] / $page_size),
+		);
+
+		if ($result['result']['total_results'] > 0) {
+			foreach ($result['result']['rows'] as $row) {
+				$members[] = [
+					'id' => $row['id'],
+					'nickname' => $row['nickname'],
+					'mobile' => $row['mobile'],
+				];
+			}
+		}
+
+//		$members[] = [
+//			'id' => '2840',
+//			'nickname' => '',
+//			'mobile' => '',
+//		];
+
+		$rows = array();
+		foreach ($members as $member) {
+			$ticket_id = 332;
+
 			$data = array();
 			$data['method'] = 'tickets.receipts.inviter.get';
 			$data['fields'] = '*';
-			$data['ticket_id'] = $row['ticket_id'];
-			$data['inviter_id'] = $row['member_id'];
+			$data['ticket_id'] = $ticket_id;
+			$data['inviter_id'] = $member['id'];
 
 			$result = EtaApp_helper::load($data);
 			$result = json_decode($result, true);
 
-			$row['count'] = $result['result']['total_results'];
+			$rows[] = [
+				'flag' => $flag,
+				'member_id' => $member['id'],
+				'desc' => $member['nickname'] . ' ' . $member['mobile'],
+				'count' => $result['result']['total_results'],
+				'ticket_id' => $ticket_id,
+			];
 		}
 
-		$pagination = array(
-			'page' => 1,
-			'pages' => 1,
-		);
 
-		$result = array(
-			'return_code' => 10000,
-			'return_msg' => 'success',
-			'data' => array(
+		if ($v == 'v2') {
+			$data = array(
 				'rows' => $rows,
 				'pagination' => $pagination,
-			)
-		);
+			);
 
-		die(json_encode($result));
+			return Util_helper::result($data);
+		}
+		else {
+			$result = array(
+				'return_code' => 10000,
+				'return_msg' => 'success',
+				'data' => array(
+					'rows' => $rows,
+					'pagination' => $pagination,
+				)
+			);
+
+			die(json_encode($result));
+		}
 	}
 
 	public function agent_show()
 	{
+		$v = $this->input->get_post('v');
 		$ticket_id = $this->input->get_post('ticket_id');
 		$inviter_id = $this->input->get_post('inviter_id');
 		$page = $this->input->get_post('page');
+		$format = $this->input->get_post('format');
+
+		if (empty($format)) {
+			$format = 'json';
+		}
 
 		$page = intval($page);
 
 		if (empty($page)) {
 			$page = 1;
 		}
+
+		$data = array();
+		$data['method'] = 'members.member.get';
+		$data['id'] = $inviter_id;
+		$data['fields'] = '*';
+
+		$result = EtaApp_helper::load($data);
+		$member_result = json_decode($result, true);
 
 		$page_size = 20;
 
@@ -1081,10 +1173,33 @@ class Order extends CI_Controller
 		$data['page_size'] = $page_size;
 		$data['ticket_id'] = $ticket_id;
 		$data['inviter_id'] = $inviter_id;
-		$data['status'] = 'USED';
+		// $data['status'] = 'CONFIRMED';
 
 		$result = EtaApp_helper::load($data);
 		$result = json_decode($result, true);
+
+		if ($result['result']['total_results'] > 0) {
+			foreach ($result['result']['rows'] as &$row) {
+
+				$params = array(
+					'method' => 'members.member.get',
+					'page_size' => 200,
+					'id' => $row['member_id'],
+					'fields' => '*',
+				);
+
+				$tmp_member_result = EtaApp_helper::load($params);
+				$tmp_member_result = json_decode($tmp_member_result, true);
+
+				$member_inviter_id = 0;
+				if (isset($tmp_member_result['result']) && isset($tmp_member_result['result']['inviter_id'])) {
+					$member_inviter_id = $tmp_member_result['result']['inviter_id'];
+				}
+				$row['member_inviter_id'] = $member_inviter_id;
+
+				$row['fx_qty'] = $row['amount'] / $row['price'];
+			}
+		}
 
 		$pagination = array(
 			'page' => $page,
@@ -1092,6 +1207,25 @@ class Order extends CI_Controller
 
 		$pagination['count'] = $result['result']['total_results'];
 		$pagination['pages'] = ceil($result['result']['total_results'] / $page_size);
+
+		if ($v == 'v2') {
+			$data = $result['result'];
+			$data['pagination'] = $pagination;
+			$data['member'] = $member_result['result'];
+
+			if ($pagination['count'] == 0) {
+				$data['rows'] = array();
+			}
+
+			if ($data['member']['flag'] == 'Y') {
+				$data['member']['show_order_amount'] = false;
+			}
+			else {
+				$data['member']['show_order_amount'] = true;
+			}
+
+			return Util_helper::result($data);
+		}
 
 		$result = array(
 			'return_code' => 10000,
@@ -1101,7 +1235,50 @@ class Order extends CI_Controller
 
 		$result['data']['pagination'] = $pagination;
 
-		die(json_encode($result));
+		if ($pagination['count'] == 0) {
+			$result['data']['rows'] = array();
+		}
+
+		if ($format == 'json') {
+			die(json_encode($result));
+		}
+
+		if ($format == 'table') {
+			echo '<style>table { border-collapse: collapse; width: 100%; } table, th, td { border: 1px solid black; }</style>';
+
+			$total_count = 0;
+			$total_amount = 0;
+			$id = 1;
+
+			echo '<table>';
+
+			foreach ($result['data']['rows'] as $row) {
+
+				$count = $row['amount'] / $this->get_ticket_price($ticket_id);
+
+				echo '<tr>';
+				echo '<td>' . $id++ . '</td>';
+				echo '<td>' . $row['id']  . '</td>';
+				echo '<td>' . $count  . '</td>';
+				echo '<td>' . $row['amount']  . '</td>';
+				echo '<td>' . $row['status_text']  . '</td>';
+				echo '<td>' . $row['ctime']  . '</td>';
+				echo '</tr>';
+
+				$total_count += $count;
+				$total_amount += $row['amount'];
+			}
+
+			echo '<tr>';
+			echo '<td>' . '</td>';
+			echo '<td>' . $total_count  . '</td>';
+			echo '<td>' . $total_amount  . '</td>';
+			echo '<td>' . '</td>';
+			echo '<td>' . '</td>';
+			echo '</tr>';
+
+			echo '</table>';
+		}
 	}
 
 	public function member_search()
@@ -1115,5 +1292,171 @@ class Order extends CI_Controller
 		$result = json_decode($result, true);
 
 		die(json_encode($result));
+	}
+
+
+	public function rank()
+	{
+//		$params = array(
+//			'method' => 'members.member.get',
+//			'page_size' => 200,
+//			'id' => 74577,
+//			'fields' => '*',
+//		);
+//
+//		$result = EtaApp_helper::load($params);
+//		$result = json_decode($result, true);
+//		if (strtotime($result['result']['ctime'] ) - strtotime('2025-01-11 00:00:00') < 24 * 3600) {
+//			echo 'yes';
+//		}
+//		else {
+//			echo 'no';
+//		}
+//		die($result);
+
+		$date = $this->input->get_post('date');
+
+		if (empty($date)) {
+			$date = date('Y-m-d');
+		}
+
+		$params = array(
+			'method' => 'tickets.receipts.get',
+			'page_size' => 200,
+			'stime' => $date . ' 00:00:00',
+			'etime' => $date . ' 23:59:59',
+			'fields' => '*'
+		);
+
+		$result = EtaApp_helper::load($params);
+
+		$result = json_decode($result, true);
+
+		$inviter_rows = array();
+		$inviter_sums = array();
+
+		foreach ($result['result']['rows'] as $row) {
+
+			if ($row['status'] == 'CONFIRMED' || $row['status'] == 'USED') {
+
+				$params = array(
+					'method' => 'members.member.get',
+					'page_size' => 200,
+					'id' => $row['member_id'],
+					'fields' => '*',
+				);
+
+				$result = EtaApp_helper::load($params);
+				$result = json_decode($result, true);
+				$inviter_id = $result['result']['inviter_id'];
+
+//				if (strtotime($result['result']['ctime'] ) < strtotime('2025-01-11 00:00:00')) {
+//					$inviter_id = 0;
+//				}
+
+				if (!isset($inviter_rows[$inviter_id])) {
+					$inviter_rows[$inviter_id] = array(
+						'inviter_id' => $inviter_id,
+						'fx_qty' => 0,
+						'fx_amount' => 0,
+						'receipts' => '',
+					);
+				}
+
+				$row['fx_qty'] = '';
+
+				$inviter_rows[$inviter_id]['fx_qty'] += $row['amount'] / $row['price'];
+				$inviter_rows[$inviter_id]['fx_amount'] += $row['amount'];
+				$inviter_rows[$inviter_id]['receipts'] .= ' ' . $row['id'];
+
+				if (empty($row['inviter_id'])) {
+					$params = array(
+						'method' => 'tickets.receipt.update',
+						'id' => $row['id'],
+						'inviter_id' => $inviter_id,
+					);
+
+					$update_result = EtaApp_helper::load($params);
+				}
+			}
+		}
+
+		$inviter_rows = array_values($inviter_rows);
+		$inviter_amounts = array_column($inviter_rows, 'fx_amount');
+		array_multisort($inviter_amounts, SORT_DESC, $inviter_rows);
+
+		$total_count = 0;
+		$total_amount = 0;
+		$total_invite_count = 0;
+		$total_invite_amount = 0;
+
+		echo '<style>table { border-collapse: collapse; width: 100%; } table, th, td { border: 1px solid black; }</style>';
+
+		echo '<h3>' . $date . '</h3>';
+
+		echo '<table>';
+		echo '<tr>';
+		echo '<td>序号</td>';
+		echo '<td>ID</td>';
+		echo '<td>姓名</td>';
+		echo '<td>电话</td>';
+		echo '<td>票数量</td>';
+		echo '<td>金额</td>';
+		echo '<td>卡券ID</td>';
+		echo '</tr>';
+
+		$id = 1;
+		foreach ($inviter_rows as $inviter_row) {
+
+			$inviter_id = $inviter_row['inviter_id'];
+
+			$params = array(
+				'method' => 'members.member.get',
+				'page_size' => 200,
+				'id' => $inviter_id,
+				'fields' => '*',
+			);
+
+			$member_result = EtaApp_helper::load($params);
+			$member_result = json_decode($member_result, true);
+
+			$flag = '';
+			$nickname = '';
+			$mobile = '';
+
+			if (isset($member_result['result'])) {
+				$flag = $member_result['result']['flag'];
+				$nickname = $member_result['result']['nickname'];
+				$mobile = $member_result['result']['mobile'];
+			}
+
+			echo '<tr>';
+			echo '<td>' . $id++ . '</td>';
+			echo '<td>' . $flag . $inviter_id . '</td>';
+			echo '<td>' . $nickname . '</td>';
+			echo '<td>' . $mobile . '</td>';
+			echo '<td>' . $inviter_row['fx_qty'] . '</td>';
+			echo '<td>' . $inviter_row['fx_amount'] . '</td>';
+			echo '<td>' . $inviter_row['receipts'] . '</td>';
+			echo '</tr>';
+
+			$total_count += $inviter_row['fx_qty'];
+			$total_amount += $inviter_row['fx_amount'];
+
+			if (!empty($inviter_id)) {
+				$total_invite_count += $inviter_row['fx_qty'];
+				$total_invite_amount += $inviter_row['fx_amount'];
+			}
+		}
+
+		echo '<tr>';
+		echo '<td>合计</td>';
+		echo '<td></td>';
+		echo '<td></td>';
+		echo '<td></td>';
+		echo '<td>' . $total_invite_count . '/' . $total_count . '</td>';
+		echo '<td>' . $total_invite_amount . '/' . $total_amount . '</td>';
+		echo '<td></td>';
+		echo '</table>';
 	}
 }
