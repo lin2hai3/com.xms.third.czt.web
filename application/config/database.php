@@ -141,3 +141,26 @@ $db['default'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
+
+//$db['default'] = array(
+//	'dsn'	=> '',
+//	'hostname' => 'rm-wz9ke1m803i4n2f2a.mysql.rds.aliyuncs.com',
+//	'username' => 'linhai',
+//	'password' => 'Czr9889!',
+//	'database' => 'linhai',
+//	'dbdriver' => 'mysqli',
+//	'dbprefix' => 'opt_',
+//	'pconnect' => FALSE,
+//	'db_debug' => (ENVIRONMENT !== 'production'),
+//	'cache_on' => FALSE,
+//	'cachedir' => '',
+//	'char_set' => 'utf8',
+//	'dbcollat' => 'utf8_general_ci',
+//	'swap_pre' => '',
+//	'encrypt' => FALSE,
+//	'compress' => FALSE,
+//	'stricton' => FALSE,
+//	'failover' => array(),
+//	'save_queries' => TRUE,
+//	'socket'   => '/tmp/mysql.sock',
+//);

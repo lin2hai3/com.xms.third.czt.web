@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Ticket extends CI_Controller
+class Ticket20250124 extends CI_Controller
 {
 	protected $is_debug = false;
 	protected $test_ids = 328;
@@ -190,7 +190,7 @@ class Ticket extends CI_Controller
 			}
 		}
 
-		for ($idx = 0; $idx < 5; $idx++) {
+		for ($idx = 0; $idx < 10; $idx++) {
 			$date = date('Y-m-d', strtotime('+ ' . $idx . ' days'));
 			$week = date('w', strtotime($date));
 
@@ -221,25 +221,6 @@ class Ticket extends CI_Controller
 			}
 		}
 
-
-		$data = array();
-		$data['method'] = 'tickets.receipts.counts.get';
-		$data['fields'] = '*';
-		$data['ticket_id'] = $id;
-		$data['stime'] = date('Y-m-d 00:00:00', time());
-		$data['etime'] = date('Y-m-d 23:59:59', strtotime('+3 day'));
-		$counts_result = EtaApp_helper::load($data);
-		$counts_result = json_decode($counts_result, true);
-		$counts_result_map = array();
-
-		if (isset($counts_result['result'])) {
-			foreach ($counts_result['result']['rows'] as $row) {
-				$item_key = $row['stime'] . '_' . $row['etime'];
-				$counts_result_map[$item_key] = $row['qty'];
-			}
-		}
-
-
 		$_rules = array();
 		foreach ($rules as $date => $rule) {
 
@@ -252,68 +233,57 @@ class Ticket extends CI_Controller
 				$start_time = $date . ' ' . $time_items[0];
 				$end_time = $date . ' ' . $time_items[1];
 
-//				$start_time = date('Y-m-d H:i', strtotime($start_time));
-//				$end_time = date('Y-m-d H:i', strtotime($end_time));
+				$start_time = date('Y-m-d H:i', strtotime($start_time));
+				$end_time = date('Y-m-d H:i', strtotime($end_time));
 
-//				$data = array();
-//				$data['method'] = 'tickets.receipts.count.get';
-//				$data['fields'] = '*';
-//				$data['ticket_id'] = $id;
-//				$data['stime'] = $start_time;
-//				$data['etime'] = $end_time;
-//				$data['page_size'] = '20';
-//
-//				$count_result = EtaApp_helper::load($data);
-//
-//				$count_result = json_decode($count_result, true);
-//
-//				$inventory = $item['inventory'] - $count_result['result']['count'];
-//				$item['sale_count'] = $count_result['result']['count'];
+				$data = array();
+				$data['method'] = 'tickets.receipts.count.get';
+				$data['fields'] = '*';
+				$data['ticket_id'] = $id;
+				$data['stime'] = $start_time;
+				$data['etime'] = $end_time;
+				$data['page_size'] = '20';
 
-				$start_time = date('Y-m-d H:i:s', strtotime($start_time));
-				$end_time = date('Y-m-d H:i:s', strtotime($end_time));
-				$item_key = $start_time . '_' . $end_time;
+				$count_result = EtaApp_helper::load($data);
 
-				$sale_count = 0;
-				if (isset($counts_result_map[$item_key])) {
-					$sale_count = $counts_result_map[$item_key];
+				$count_result = json_decode($count_result, true);
+
+				$inventory = $item['inventory'] - $count_result['result']['count'];
+
+				if ($inventory < 0) {
+					$inventory = 0;
 				}
 
-				$inventory = $item['inventory'] - $sale_count;
 				$item['inventory'] = $inventory;
-				$item['sale_count'] = $sale_count;
+				$item['sale_count'] = $count_result['result']['count'];
 
 				$item['real_inventory'] = 0;
 				$item['real_sale_count'] = 0;
 
-//				if ($show_remain == 1) {
-//					$data = array();
-//					$data['method'] = 'tickets.receipts.get';
-//					$data['fields'] = '*';
-//					$data['ticket_id'] = $id;
-//					$data['stime'] = $start_time;
-//					$data['etime'] = $end_time;
-//					$data['page_size'] = '20';
-//
-//					$remain_result = EtaApp_helper::load($data);
-//
-//					$remain_result = json_decode($remain_result, true);
-//
-//					$real_sale_count = 0;
-//					if ($remain_result['result']['total_results'] > 0) {
-//						foreach ($remain_result['result']['rows'] as $row) {
-//							$real_sale_count += ceil($row['amount'] / $row['price']); // 老人小孩半票 也算一个位
-//						}
-//					}
-//
-//					$item['real_inventory'] = $item['total_inventory'] - $real_sale_count;
-//					$item['real_sale_count'] = $real_sale_count;
-//
-//					$item['inventory'] = $item['real_inventory'];
-//				}
+				if ($show_remain == 1) {
+					$data = array();
+					$data['method'] = 'tickets.receipts.get';
+					$data['fields'] = '*';
+					$data['ticket_id'] = $id;
+					$data['stime'] = $start_time;
+					$data['etime'] = $end_time;
+					$data['page_size'] = '20';
 
-				if ($item['inventory'] < 0) {
-					$item['inventory'] = 0;
+					$remain_result = EtaApp_helper::load($data);
+
+					$remain_result = json_decode($remain_result, true);
+
+					$real_sale_count = 0;
+					if ($remain_result['result']['total_results'] > 0) {
+						foreach ($remain_result['result']['rows'] as $row) {
+							$real_sale_count += ceil($row['amount'] / $row['price']); // 老人小孩半票 也算一个位
+						}
+					}
+
+					$item['real_inventory'] = $item['total_inventory'] - $real_sale_count;
+					$item['real_sale_count'] = $real_sale_count;
+
+					$item['inventory'] = $item['real_inventory'];
 				}
 
 				// 过期都显示卖完
@@ -322,9 +292,9 @@ class Ticket extends CI_Controller
 				}
 
 
-//				$item['_start_time'] = $start_time;
-//				$item['_end_time'] = $end_time;
-//				$item['_sale_count'] = $count_result['result']['count'];
+				$item['_start_time'] = $start_time;
+				$item['_end_time'] = $end_time;
+				$item['_sale_count'] = $count_result['result']['count'];
 			}
 
 			unset($item);
@@ -337,9 +307,6 @@ class Ticket extends CI_Controller
 
 
 		$result['result']['skus'] = $this->get_skus($id);
-
-		// $result['counts_result'] = $counts_result['result'];
-		$result['counts_result_map'] = $counts_result_map;
 
 		die(json_encode($result));
 	}

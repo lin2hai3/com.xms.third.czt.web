@@ -143,7 +143,7 @@ class Order extends CI_Controller
 			}
 		}
 
-		for ($idx = 0; $idx < 7; $idx++) {
+		for ($idx = 0; $idx < 5; $idx++) {
 			$date = date('Y-m-d', strtotime('+ ' . $idx . ' days'));
 			$week = date('w', strtotime($date));
 
@@ -167,9 +167,25 @@ class Order extends CI_Controller
 			}
 		}
 
+		$data = array();
+		$data['method'] = 'tickets.receipts.counts.get';
+		$data['fields'] = '*';
+		$data['ticket_id'] = $id;
+		$data['stime'] = date('Y-m-d 00:00:00', time());
+		$data['etime'] = date('Y-m-d 23:59:59', strtotime('+3 day'));
+		$counts_result = EtaApp_helper::load($data);
+		$counts_result = json_decode($counts_result, true);
+		$counts_result_map = array();
+
+		if (isset($counts_result['result'])) {
+			foreach ($counts_result['result']['rows'] as $row) {
+				$item_key =  $row['stime'] . '_' . $row['etime'];
+				$counts_result_map[$item_key] = $row['qty'];
+			}
+		}
+
 		$_rules = array();
 		foreach ($rules as $date => $rule) {
-
 
 			$_rule['date'] = $date;
 			$_rule['weekdate'] = $this->get_week_date($date);
@@ -182,22 +198,34 @@ class Order extends CI_Controller
 				$start_time = $date . ' ' . $time_items[0];
 				$end_time = $date . ' ' . $time_items[1];
 
-				$data = array();
-				$data['method'] = 'tickets.receipts.count.get';
-				$data['fields'] = '*';
-				$data['ticket_id'] = $id;
-				$data['stime'] = $start_time;
-				$data['etime'] = $end_time;
-				$data['page_size'] = '20';
+//				$data = array();
+//				$data['method'] = 'tickets.receipts.count.get';
+//				$data['fields'] = '*';
+//				$data['ticket_id'] = $id;
+//				$data['stime'] = $start_time;
+//				$data['etime'] = $end_time;
+//				$data['page_size'] = '20';
+//
+//				$count_result = EtaApp_helper::load($data);
+//
+//				$count_result = json_decode($count_result, true);
+//
+//				$inventory = $item['inventory'] - $count_result['result']['count'];
+//
+//				$item['inventory'] = $inventory;
+//				$item['sale_count'] = $count_result['result']['count'];
 
-				$count_result = EtaApp_helper::load($data);
+				$start_time = date('Y-m-d H:i:s', strtotime($start_time));
+				$end_time = date('Y-m-d H:i:s', strtotime($end_time));
+				$item_key = $start_time . '_' . $end_time;
 
-				$count_result = json_decode($count_result, true);
+				$sale_count = 0;
+				if (isset($counts_result_map[$item_key])) {
+					$sale_count = $counts_result_map[$item_key];
+				}
 
-				$inventory = $item['inventory'] - $count_result['result']['count'];
-
-				$item['inventory'] = $inventory;
-				$item['sale_count'] = $count_result['result']['count'];
+				$item['sale_count'] = $sale_count;
+				$item['inventory'] = $item['inventory'] - $sale_count;
 
 				$_items[$item['time_span']] = $item;
 			}
@@ -253,7 +281,6 @@ class Order extends CI_Controller
 			'api_app_key' => 'qZcKiQmN',
 		);
 
-
 		$date = $this->input->get_post('date');
 		$ticket_id = $this->input->get_post('ticket_id');
 		$timerange = $this->input->get_post('timerange');
@@ -262,6 +289,19 @@ class Order extends CI_Controller
 
 		if (empty($qty)) {
 			$qty = 1;
+		}
+
+		if (empty($data) && empty($timerange)) {
+			$result = array(
+				'ticket_id' => $ticket_id,
+				'stime' => '',
+				'etime' => '',
+				'can_add_receipt' => 1,
+				'code' => 0,
+				'msg' => 'success',
+			);
+
+			die(json_encode($result, JSON_UNESCAPED_UNICODE));
 		}
 
 		$time_ranges = explode('-', $timerange);
@@ -293,7 +333,7 @@ class Order extends CI_Controller
 
 		$rules = $this->get_ticket_rules($ticket_id);
 
-		log_message('error', json_encode($rules));
+		// log_message('DEBUG', json_encode($rules));
 
 		$can_add_receipt = false;
 		if (isset($rules[$date])) {
@@ -469,6 +509,7 @@ class Order extends CI_Controller
 		}
 
 		$notify_url = 'https://linhai.666os.com/v2/index.php/eticket/order/pay_result/' . $order_number;
+		$notify_url = 'https://linhai.666os.com/v2/index.php/api/notify/fuiou/' . $order_number;
 
 		$trade_no = $this->pay_config['mchnt_code'] . date('Ymd') . $order_number; // 商户订单号
 
@@ -546,6 +587,7 @@ class Order extends CI_Controller
 		}
 
 		$notify_url = 'https://linhai.666os.com/v2/index.php/eticket/order/pay_result/' . $order_number;
+		$notify_url = 'https://linhai.666os.com/v2/index.php/api/notify/yipiao/' . $order_number;
 
 		$trade_no = $this->pay_config['mchnt_code'] . date('Ymd') . $order_number; // 商户订单号
 
@@ -622,7 +664,7 @@ class Order extends CI_Controller
 
 	public function pay_result()
 	{
-
+		echo '111';
 	}
 
 	function get_real_ip()
@@ -1123,8 +1165,7 @@ class Order extends CI_Controller
 			);
 
 			return Util_helper::result($data);
-		}
-		else {
+		} else {
 			$result = array(
 				'return_code' => 10000,
 				'return_msg' => 'success',
@@ -1211,19 +1252,21 @@ class Order extends CI_Controller
 		if ($v == 'v2') {
 			$data = $result['result'];
 			$data['pagination'] = $pagination;
-			$data['member'] = $member_result['result'];
+
 
 			if ($pagination['count'] == 0) {
 				$data['rows'] = array();
 			}
-
-			if ($data['member']['flag'] == 'Y') {
-				$data['member']['show_order_amount'] = false;
-			}
 			else {
-				$data['member']['show_order_amount'] = true;
+				if (isset($member_result['result'])) {
+					$data['member'] = $member_result['result'];
+					if ($data['member']['flag'] == 'Y') {
+						$data['member']['show_order_amount'] = false;
+					} else {
+						$data['member']['show_order_amount'] = true;
+					}
+				}
 			}
-
 			return Util_helper::result($data);
 		}
 
@@ -1258,11 +1301,11 @@ class Order extends CI_Controller
 
 				echo '<tr>';
 				echo '<td>' . $id++ . '</td>';
-				echo '<td>' . $row['id']  . '</td>';
-				echo '<td>' . $count  . '</td>';
-				echo '<td>' . $row['amount']  . '</td>';
-				echo '<td>' . $row['status_text']  . '</td>';
-				echo '<td>' . $row['ctime']  . '</td>';
+				echo '<td>' . $row['id'] . '</td>';
+				echo '<td>' . $count . '</td>';
+				echo '<td>' . $row['amount'] . '</td>';
+				echo '<td>' . $row['status_text'] . '</td>';
+				echo '<td>' . $row['ctime'] . '</td>';
 				echo '</tr>';
 
 				$total_count += $count;
@@ -1271,8 +1314,8 @@ class Order extends CI_Controller
 
 			echo '<tr>';
 			echo '<td>' . '</td>';
-			echo '<td>' . $total_count  . '</td>';
-			echo '<td>' . $total_amount  . '</td>';
+			echo '<td>' . $total_count . '</td>';
+			echo '<td>' . $total_amount . '</td>';
 			echo '<td>' . '</td>';
 			echo '<td>' . '</td>';
 			echo '</tr>';
@@ -1297,6 +1340,9 @@ class Order extends CI_Controller
 
 	public function rank()
 	{
+
+		echo '已暂停';
+		die();
 //		$params = array(
 //			'method' => 'members.member.get',
 //			'page_size' => 200,
@@ -1314,7 +1360,10 @@ class Order extends CI_Controller
 //		}
 //		die($result);
 
+		$ticket_id = 332;
+
 		$date = $this->input->get_post('date');
+		$format = $this->input->get_post('format');
 
 		if (empty($date)) {
 			$date = date('Y-m-d');
@@ -1325,6 +1374,7 @@ class Order extends CI_Controller
 			'page_size' => 200,
 			'stime' => $date . ' 00:00:00',
 			'etime' => $date . ' 23:59:59',
+			'ticket_id' => $ticket_id,
 			'fields' => '*'
 		);
 
@@ -1336,6 +1386,8 @@ class Order extends CI_Controller
 		$inviter_sums = array();
 
 		foreach ($result['result']['rows'] as $row) {
+
+			// die(json_encode($row));
 
 			if ($row['status'] == 'CONFIRMED' || $row['status'] == 'USED') {
 
@@ -1360,6 +1412,8 @@ class Order extends CI_Controller
 						'fx_qty' => 0,
 						'fx_amount' => 0,
 						'receipts' => '',
+						'receipts_paid' => [],
+						'receipts_unpaid' => [],
 					);
 				}
 
@@ -1368,6 +1422,12 @@ class Order extends CI_Controller
 				$inviter_rows[$inviter_id]['fx_qty'] += $row['amount'] / $row['price'];
 				$inviter_rows[$inviter_id]['fx_amount'] += $row['amount'];
 				$inviter_rows[$inviter_id]['receipts'] .= ' ' . $row['id'];
+
+				if ($row['inviter_paid'] == 1) {
+					$inviter_rows[$inviter_id]['receipts_paid'][] = $row['id'];
+				} else {
+					$inviter_rows[$inviter_id]['receipts_unpaid'][] = $row['id'];
+				}
 
 				if (empty($row['inviter_id'])) {
 					$params = array(
@@ -1384,6 +1444,50 @@ class Order extends CI_Controller
 		$inviter_rows = array_values($inviter_rows);
 		$inviter_amounts = array_column($inviter_rows, 'fx_amount');
 		array_multisort($inviter_amounts, SORT_DESC, $inviter_rows);
+
+		if ($format == 'json') {
+
+			foreach ($inviter_rows as &$inviter_row) {
+				$inviter_id = $inviter_row['inviter_id'];
+
+				$params = array(
+					'method' => 'members.member.get',
+					'page_size' => 200,
+					'id' => $inviter_id,
+					'fields' => '*',
+				);
+
+				$member_result = EtaApp_helper::load($params);
+				$member_result = json_decode($member_result, true);
+
+				$flag = '';
+				$mobile = '';
+				$nickname = '';
+
+				if (isset($member_result['result'])) {
+					$flag = $member_result['result']['flag'];
+					$mobile = $member_result['result']['mobile'];
+					$nickname = $member_result['result']['nickname'];
+
+				}
+
+				$inviter_row['member_id'] = $inviter_id;
+				$inviter_row['nickname'] = $nickname;
+				$inviter_row['mobile'] = $mobile;
+				$inviter_row['flag'] = $flag;
+				$inviter_row['ticket_id'] = $ticket_id;
+			}
+
+			$data = array(
+				'rows' => $inviter_rows,
+				'pagination' => array(
+					'page' => 1,
+					'pages' => 1,
+					'count' => count($inviter_rows),
+				)
+			);
+			return Util_helper::result($data);
+		}
 
 		$total_count = 0;
 		$total_amount = 0;
@@ -1458,5 +1562,163 @@ class Order extends CI_Controller
 		echo '<td>' . $total_invite_amount . '/' . $total_amount . '</td>';
 		echo '<td></td>';
 		echo '</table>';
+	}
+
+	public function rank2()
+	{
+		$date = $this->input->get_post('date');
+
+		if (empty($date)) {
+			$date = date('Y-m-d');
+		}
+
+		$ticket_id = 332;
+
+		$data = array();
+		$data['method'] = 'tickets.receipts.inviter.summary.get';
+		$data['fields'] = '*';
+		$data['ticket_id'] = $ticket_id;
+		$data['date'] = $date;
+		$counts_result = EtaApp_helper::load($data);
+
+		$counts_result = json_decode($counts_result, true);
+
+		$items = array();
+		if (isset($counts_result['result'])) {
+			foreach ($counts_result['result']['rows'] as $row) {
+
+				$params = array(
+					'method' => 'members.member.get',
+					'page_size' => 200,
+					'id' => $row['inviter_id'],
+					'fields' => '*',
+				);
+
+				$member_result = EtaApp_helper::load($params);
+				$member_result = json_decode($member_result, true);
+
+				$flag = '';
+				$mobile = '';
+				$nickname = '';
+
+				if (isset($member_result['result'])) {
+					$flag = $member_result['result']['flag'];
+					$mobile = $member_result['result']['mobile'];
+					$nickname = $member_result['result']['nickname'];
+
+				}
+
+				$items[] = [
+					'flag' => $flag,
+					'nickname' => $nickname,
+					'inviter_id' => $row['inviter_id'],
+					'member_id' => $row['inviter_id'],
+					'mobile' => $row['mobile'],
+					'fx_qty' => $row['total_amount'] / 98,
+					'fx_amount' => $row['total_amount'],
+					'ticket_id' => $ticket_id,
+				];
+			}
+		}
+
+		$sort_arr1 = array_column($items, 'flag');
+		array_multisort($sort_arr1, SORT_DESC, $items);
+
+		$data = array(
+			'rows' => $items,
+			'pagination' => array(
+				'page' => 1,
+				'pages' => 1,
+				'count' => count($items),
+			),
+			'counts_result' => $counts_result,
+		);
+		return Util_helper::result($data);
+	}
+
+	public function pay_inviter()
+	{
+		$sid = $this->input->get_post('sid');
+		$receipt_id = $this->input->get_post('receipt_id');
+
+		// $receipt_id = '51758';
+
+		if (empty($sid) || empty($receipt_id)) {
+			return Util_helper::result(null, '参数不能为空', 1);
+		}
+
+		$member_id = $this->getMemberIdBySid($sid);
+
+		$params = array();
+		$params['method'] = 'tickets.receipt.get';
+		$params['fields'] = '*';
+		$params['id'] = $receipt_id;
+
+		$receipt_result = EtaApp_helper::load($params);
+		$receipt_result = json_decode($receipt_result, true);
+
+		$price = $receipt_result['result']['price'];
+		$qty = $receipt_result['result']['amount'] / $receipt_result['result']['price'];
+		$amount = $receipt_result['result']['amount'];
+
+		$this->load->model('Ticketinviterpaylog_model', 'pay_log');
+
+		$pay_log = array(
+			'pay_member_sid' => $sid,
+			'pay_member_id' => $member_id,
+			'receipt_id' => $receipt_id,
+			'status' => 1,
+			'price' => $price,
+			'qty' => $qty,
+			'amount' => $amount,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		);
+
+		$res = $this->pay_log->create($pay_log);
+
+		$params = array(
+			'method' => 'tickets.receipt.update',
+			'id' => $receipt_id,
+			'inviter_paid' => '1',
+		);
+
+		$update_result = EtaApp_helper::load($params);
+		die($update_result);
+	}
+
+	public function getMemberIdBySid($sid)
+	{
+		// fetch weixin id
+		$params = array(
+			'method' => 'weixin.sid.decode',
+			'fields' => '*',
+			'sid' => $sid,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if (!isset($result['result']['weixin_id'])) {
+			return Util_helper::result(null, 'error input', -1);
+		}
+
+		$weixin_id = $result['result']['weixin_id'];
+
+		// fetch member_id
+		$params = array(
+			'method' => 'weixin.member.id.get',
+			'fields' => '*',
+			'weixin_id' => $weixin_id,
+		);
+
+		$result = EtaApp_helper::load($params);
+		$result = json_decode($result, true);
+
+		if (!isset($result['result']['member_id'])) {
+			return Util_helper::result(null, 'error input', -1);
+		}
+
+		return $result['result']['member_id'];
 	}
 }

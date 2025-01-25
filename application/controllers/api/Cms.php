@@ -21,7 +21,7 @@ class Cms extends CI_Controller
 			'wish.edit' => '/apps/wish/editDonor',
 			'wish.update' => '/apps/wish/update',
 			'wish.upload' => '/apps/wish/upload',
-			'wish.bind' => '/apps/wish/bind',
+			'wish.bind_wechat' => '/apps/wish/bindWechat',
 
 //			 	checkIsAdminUri:'/apps/wish/admin/is_admin',
 //			 	adminIndexUri:'/apps/wish/admin/index',

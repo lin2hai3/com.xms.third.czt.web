@@ -465,4 +465,13 @@ class Config extends CI_Controller
 
 		return util_helper::result($data);
 	}
+
+	public function system()
+	{
+		$data = array(
+			'admin_flags' => array('X', 'A', 'Y', 'D', 'K'), // X=SA
+		);
+
+		return Util_helper::result($data);
+	}
 }

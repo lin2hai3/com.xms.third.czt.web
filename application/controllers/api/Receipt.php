@@ -108,8 +108,8 @@ class Receipt extends CI_Controller
 		$data['sid'] = $inviter_sid;
 
 		$result = EtaApp_helper::load($data);
-		log_message('error', '$inviter_sid#' . $inviter_sid);
-		log_message('error', $result);
+		// log_message('error', '$inviter_sid#' . $inviter_sid);
+		// log_message('error', $result);
 		$result = json_decode($result, true);
 
 		$inviter_weixin_id = 0;
@@ -136,14 +136,18 @@ class Receipt extends CI_Controller
 		$data = array();
 		$data['method'] = 'tickets.receipt.insert';
 
-		$stime = date('Y-m-d H:i', strtotime($stime));
-		$etime = date('Y-m-d H:i', strtotime($etime));
+		$remark = '';
 
-		if (!empty($sku_name)) {
-			$sku_name = $sku_name . '; ';
+		if (!empty($stime) && !empty($etime)) {
+			$stime = date('Y-m-d H:i', strtotime($stime));
+			$etime = date('Y-m-d H:i', strtotime($etime));
+
+			if (!empty($sku_name)) {
+				$sku_name = $sku_name . '; ';
+			}
+
+			$remark = $sku_name . '场次：' . $stime . '至' . $etime . ' ' . $remark;
 		}
-
-		$remark = $sku_name . '场次：' . $stime . '至' . $etime . ' ' . $remark;
 
 		$data['ticket_id'] = $ticket_id;
 		$data['member_id'] = $member_id;
